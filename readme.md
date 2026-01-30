@@ -218,4 +218,4 @@ This keeps the codebase clean and everyone sane 🧠✨
 
 ---
 
-Happy coding! Learn as we build!
+Happy coding!
