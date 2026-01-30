@@ -213,10 +213,9 @@ git pull origin main
 
 ## 🧠 Golden Rule
 
-> **If you're unsure — ASK before pushing or merging**
-
+> **If you're unsure — ASK the admin before pushing or merging**
 This keeps the codebase clean and everyone sane 🧠✨
 
 ---
 
-Happy coding! 🚀
+Happy coding!
