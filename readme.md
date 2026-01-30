@@ -15,7 +15,7 @@ To avoid conflicts, lost work, and chaos 😅, **everyone must follow the workfl
 
 ---
 
-## 🌱 Branching Strategy
+## 🌱 Branching Strategy's
 
 ### Main Branches
 - `main` → **Stable production-ready code**
