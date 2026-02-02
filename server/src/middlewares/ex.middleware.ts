@@ -1,49 +1,24 @@
-// import { Request, Response, NextFunction } from "express";
-// import jwt from "jsonwebtoken";
-
-// export const protect = (req: Request, res: Response, next: NextFunction) => {
-//     let token;
-
-//     // 1. Check if token exists in headers
-//     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-//         token = req.headers.authorization.split(" ")[1];
-//     }
-
-//     if (!token) {
-//         return res.status(401).json({ message: "Not authorized, no token" });
-//     }
-
-//     try {
-//         // 2. Verify token
-//         // Make sure to add JWT_SECRET to your .env file!
-//         const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
-        
-//         // 3. Attach user info to request (optional)
-//         (req as any).user = decoded; 
-        
-//         next();
-//     } catch (error) {
-//         res.status(401).json({ message: "Not authorized, token failed" });
-//     }
-// };
-
-
-import { Router } from "express";
+import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const router = Router();
+export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+    // 1. Grab the token from the 'Authorization' header
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1]; // Format: "Bearer TOKEN"
 
-router.get("/login", (req, res) => {
-    // In a real app, you'd verify the PG user here first
-    const user = { id: 1, username: "candidate_test" };
+    if (!token) {
+        return res.status(401).json({ message: "Access Denied: No Token Provided" });
+    }
 
-    // Sign the token
-    const token = jwt.sign(user, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '1h' });
-
-    res.status(200).json({
-        message: "Login Successful",
-        token: token
-    });
-});
-
-export default router;
+    try {
+        // 2. Verify the token
+        const verified = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        
+        // 3. Attach user info to the request object so routes can use it
+        (req as any).user = verified;
+        
+        next(); // Move to the next function/route
+    } catch (err) {
+        res.status(403).json({ message: "Invalid or Expired Token" });
+    }
+};
