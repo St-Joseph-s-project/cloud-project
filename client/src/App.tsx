@@ -9,6 +9,8 @@ import DashboardPage from './pages/DashboardPage';
 import StudentDataPage from './pages/StudentDataPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import ProblemsPage from './pages/ProblemsPage';
+import ReportsPage from './pages/ReportsPage';
+
 
 const App: React.FC = () => {
     return (
@@ -30,6 +32,7 @@ const App: React.FC = () => {
                     <Route path="problems" element={<ProblemsPage />} />
                     <Route path="students" element={<StudentDataPage />} />
                     <Route path="leaderboard" element={<LeaderboardPage />} />
+                    <Route path="reports" element={<ReportsPage />} />
                 </Route>
             </Routes>
         </Router>

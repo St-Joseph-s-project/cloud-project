@@ -1,55 +1,117 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../hooks/store';
-import { ChartBarIcon, UsersIcon, CheckBadgeIcon } from '@heroicons/react/24/outline';
+import { fetchDashboardStats } from '../services/api';
+import { UserGroupIcon, AcademicCapIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
 
 const DashboardPage: React.FC = () => {
-    const { items } = useAppSelector((state) => state.problems);
     const { user } = useAppSelector((state) => state.auth);
+    const [stats, setStats] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
-    const stats = [
-        { name: 'Total Problems', stat: items.length.toString(), icon: ChartBarIcon, color: 'bg-blue-500' },
-        { name: 'Total Students', stat: '256', icon: UsersIcon, color: 'bg-green-500' },
-        { name: 'Submissions Today', stat: '45', icon: CheckBadgeIcon, color: 'bg-purple-500' },
-    ];
+    useEffect(() => {
+        const loadStats = async () => {
+            try {
+                const data = await fetchDashboardStats();
+                setStats(data);
+            } catch (error) {
+                console.error("Failed to load dashboard stats", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadStats();
+    }, []);
+
+    if (loading) {
+        return <div className="flex justify-center items-center h-full text-gray-500">Loading Dashboard...</div>;
+    }
+
+    if (!stats) {
+        return <div className="text-red-500">Error loading data.</div>;
+    }
 
     return (
-        <div>
-            <div className="mb-8">
-                <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Welcome back, {user?.username}!</h1>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Here's a quick overview of your coding platform performance.
-                </p>
+        <div className="space-y-6">
+            {/* Header */}
+            <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Welcome back, {user?.username}!</p>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {stats.map((item) => (
-                    <div
-                        key={item.name}
-                        className="relative overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow px-4 pt-5 pb-12 sm:px-6 sm:pt-6"
-                    >
-                        <dt>
-                            <div className={`absolute rounded-md p-3 ${item.color}`}>
-                                <item.icon className="h-6 w-6 text-white" aria-hidden="true" />
+            {/* Top Cards */}
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+                    <div className="p-5">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <UserGroupIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />
                             </div>
-                            <p className="ml-16 truncate text-sm font-medium text-gray-500 dark:text-gray-400">{item.name}</p>
-                        </dt>
-                        <dd className="ml-16 flex items-baseline pb-1 sm:pb-7">
-                            <p className="text-2xl font-semibold text-gray-900 dark:text-white">{item.stat}</p>
-                        </dd>
+                            <div className="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt className="text-sm font-medium text-gray-500 truncate">Total Students</dt>
+                                    <dd className="text-lg font-medium text-gray-900 dark:text-white">{stats.totalStudents}</dd>
+                                </dl>
+                            </div>
+                        </div>
                     </div>
-                ))}
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+                    <div className="p-5">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <AcademicCapIcon className="h-6 w-6 text-green-400" aria-hidden="true" />
+                            </div>
+                            <div className="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt className="text-sm font-medium text-gray-500 truncate">Active Students</dt>
+                                    <dd className="text-lg font-medium text-gray-900 dark:text-white">{stats.statusStats.active}</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+                    <div className="p-5">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <BriefcaseIcon className="h-6 w-6 text-blue-400" aria-hidden="true" />
+                            </div>
+                            <div className="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt className="text-sm font-medium text-gray-500 truncate">Succeed/Graduated</dt>
+                                    <dd className="text-lg font-medium text-gray-900 dark:text-white">{stats.statusStats.graduated}</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+                    <div className="p-5">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <UserGroupIcon className="h-6 w-6 text-red-400" aria-hidden="true" />
+                            </div>
+                            <div className="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt className="text-sm font-medium text-gray-500 truncate">Dropped</dt>
+                                    <dd className="text-lg font-medium text-gray-900 dark:text-white">{stats.statusStats.dropped}</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div className="mt-10 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">Recent Activity</h3>
-                <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
-                        No recent activity to display.
-                    </p>
-                </div>
+            <div className="mt-8">
+                <p className="text-gray-500 italic">Please visit the 'Reports' section for detailed analytics.</p>
             </div>
         </div>
     );
 };
 
+
 export default DashboardPage;
+

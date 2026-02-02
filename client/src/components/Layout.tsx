@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
+
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../hooks/store';
 import { logout } from '../redux/slices/authSlice';
 import { useTheme } from '../context/ThemeContext';
-import { HomeIcon, ArrowRightOnRectangleIcon, CommandLineIcon, UsersIcon, TrophyIcon, SunIcon, MoonIcon, PuzzlePieceIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, ArrowRightOnRectangleIcon, CommandLineIcon, UsersIcon, TrophyIcon, SunIcon, MoonIcon, PuzzlePieceIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+
 
 const Layout: React.FC = () => {
     const { user } = useAppSelector((state) => state.auth);
@@ -57,6 +59,18 @@ const Layout: React.FC = () => {
                     >
                         <PuzzlePieceIcon className="mr-3 h-5 w-5 transition-colors group-hover:text-gray-900 dark:group-hover:text-white" />
                         Problems
+                    </NavLink>
+                    <NavLink
+                        to="/reports"
+                        className={({ isActive }) =>
+                            `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors group ${isActive
+                                ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white'
+                            }`
+                        }
+                    >
+                        <ChartBarIcon className="mr-3 h-5 w-5 transition-colors group-hover:text-gray-900 dark:group-hover:text-white" />
+                        Reports
                     </NavLink>
 
                     <div className="px-4 py-2 mt-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
