@@ -1,9 +1,8 @@
 import { Router } from "express";
+import { loginAuth } from "../controllers/auth.controllers.ts";
 
 const router = Router();
 
-router.get("/login", (req, res)=>{
-    res.status(200).json({message: "Login"})
-})
+router.get("/login", loginAuth)
 
 export default router
