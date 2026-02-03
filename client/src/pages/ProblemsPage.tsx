@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../hooks/store';
-import { setCategoryFilter, setDifficultyFilter, setSortBy, addProblem, updateProblem, deleteProblem } from '../redux/slices/problemsSlice';
+import { setCategoryFilter, setDifficultyFilter, setSortBy, addProblem, updateProblem, deleteProblem, fetchProblems } from '../redux/slices/problemsSlice';
 import type { Problem } from '../types';
 import { ChevronRightIcon, PlusIcon, FunnelIcon, ArrowsUpDownIcon } from '@heroicons/react/24/outline';
 import ProblemDrawer from '../components/ProblemDrawer';
@@ -8,11 +8,15 @@ import toast from 'react-hot-toast';
 
 const ProblemsPage: React.FC = () => {
     const dispatch = useAppDispatch();
-    const { items, filter, sortBy } = useAppSelector((state) => state.problems);
+    const { items, filter, sortBy, loading, error } = useAppSelector((state) => state.problems); // Updated selector
 
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [drawerMode, setDrawerMode] = useState<'create' | 'view'>('view');
     const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
+
+    useEffect(() => {
+        dispatch(fetchProblems());
+    }, [dispatch]);
 
     // Derived State (Filtering logic)
     const filteredProblems = items.filter((p: Problem) => {
@@ -70,6 +74,9 @@ const ProblemsPage: React.FC = () => {
             console.error(error);
         }
     };
+
+    if (loading && items.length === 0) return <div className="p-8 text-center text-gray-500">Loading problems...</div>;
+    if (error && items.length === 0) return <div className="p-8 text-center text-red-500">Error: {error}</div>;
 
     return (
         <div className="relative min-h-full">

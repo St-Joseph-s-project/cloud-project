@@ -1,9 +1,23 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  type PayloadAction,
+  createAsyncThunk,
+} from "@reduxjs/toolkit";
 import type { Problem } from "../../types";
-import { INITIAL_PROBLEMS } from "../../data/problems";
+import { problemsAPI } from "../../utils/axios";
+
+export const fetchProblems = createAsyncThunk(
+  "problems/fetchProblems",
+  async () => {
+    const data = await problemsAPI.getAll();
+    return data as Problem[];
+  },
+);
 
 interface ProblemState {
   items: Problem[];
+  loading: boolean;
+  error: string | null;
   filter: {
     category: string;
     difficulty: string;
@@ -11,13 +25,10 @@ interface ProblemState {
   sortBy: string; // 'none', 'title', 'difficulty'
 }
 
-const loadProblems = (): Problem[] => {
-  const saved = localStorage.getItem("problems");
-  return saved ? JSON.parse(saved) : INITIAL_PROBLEMS;
-};
-
 const initialState: ProblemState = {
-  items: loadProblems(),
+  items: [],
+  loading: false,
+  error: null,
   filter: {
     category: "All",
     difficulty: "All",
@@ -31,21 +42,11 @@ const problemSlice = createSlice({
   reducers: {
     addProblem: (state, action: PayloadAction<Problem>) => {
       state.items.push(action.payload);
-      try {
-        localStorage.setItem("problems", JSON.stringify(state.items));
-      } catch (e) {
-        console.error("Failed to save to localStorage", e);
-      }
     },
     updateProblem: (state, action: PayloadAction<Problem>) => {
       const index = state.items.findIndex((p) => p.id === action.payload.id);
       if (index !== -1) {
         state.items[index] = action.payload;
-        try {
-          localStorage.setItem("problems", JSON.stringify(state.items));
-        } catch (e) {
-          console.error("Failed to save to localStorage", e);
-        }
       }
     },
     // Filtering Capabilities
@@ -61,21 +62,26 @@ const problemSlice = createSlice({
     },
     // Session Feature Adder Functionality (Reset items)
     resetProblems: (state) => {
-      state.items = INITIAL_PROBLEMS;
-      try {
-        localStorage.setItem("problems", JSON.stringify(INITIAL_PROBLEMS));
-      } catch (e) {
-        console.error("Failed to save to localStorage", e);
-      }
+      state.items = [];
     },
     deleteProblem: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter((p) => p.id !== action.payload);
-      try {
-        localStorage.setItem("problems", JSON.stringify(state.items));
-      } catch (e) {
-        console.error("Failed to save to localStorage", e);
-      }
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchProblems.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchProblems.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = action.payload;
+      })
+      .addCase(fetchProblems.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to fetch problems";
+      });
   },
 });
 
