@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -12,7 +12,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
     try {
         // 2. Verify the token
-        const verified = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        const verified = jwt.verify(token, process.env.JWT_SECRET_KEY || 'fallback_secret');
         
         // 3. Attach user info to the request object so routes can use it
         (req as any).user = verified;
