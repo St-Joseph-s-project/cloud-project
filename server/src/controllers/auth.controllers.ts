@@ -1,10 +1,9 @@
-// import { Request, Response } from "express";
 import type { Request, Response } from "express";
 
 import pool from "../models/model.ts";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import bcrypt from "bcrypt";
+
 
 dotenv.config();
 
@@ -12,6 +11,7 @@ interface DbUser {
   id: number;
   email: string;
   password: string;
+  role_id: number;
 }
 
 
@@ -27,7 +27,7 @@ export async function loginAuth(req: Request, res: Response): Promise<Response> 
     }
 
     const { rows } = await pool.query<DbUser>(
-      "SELECT id, email, password FROM users WHERE email = $1 LIMIT 1",
+      "SELECT id, email, role_id, password FROM users WHERE email = $1 LIMIT 1",
       [email]
     );
 
@@ -36,7 +36,7 @@ export async function loginAuth(req: Request, res: Response): Promise<Response> 
       return res.status(401).json({ message: "Invalid email" });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    const isPasswordCorrect = user.password == password;
     if (!isPasswordCorrect) {
       return res.status(401).json({ message: "Invalid password" });
     }
@@ -63,6 +63,7 @@ export async function loginAuth(req: Request, res: Response): Promise<Response> 
       user: {
         id: user.id,
         email: user.email,
+        role: user.role_id,
       },
     });
   } catch (error) {

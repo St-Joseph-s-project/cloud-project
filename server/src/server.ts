@@ -17,12 +17,7 @@ app.use("/api/auth", authRoutes)
 
 // 2. Protected Route: Only accessible with a valid token
 // This is where you'd put coding tests or user-specific data
-app.get("/api/test/start", authMiddleware, (req, res) => {
-    res.json({ 
-        message: "Welcome to the coding test platform!", 
-        user: (req as any).user 
-    });
-});
+
 
 // --- DATABASE & SERVER START ---
 
