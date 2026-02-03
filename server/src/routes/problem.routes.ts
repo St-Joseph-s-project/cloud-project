@@ -3,7 +3,7 @@ import { handleProblemSubmission, getAllProblems, getProblemById, updateProblem,
 
 const router = Router();
 
-router.post("/problem-submit", handleProblemSubmission)
+router.post("/create-problem", handleProblemSubmission)
 router.get("/get-all-problems", getAllProblems)
 router.get("/get-problem-by-id/:id", getProblemById)
 router.put("/update-problem/:id", updateProblem)

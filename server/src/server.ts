@@ -3,6 +3,7 @@ import authRoutes from "./routes/auth.routes.ts"
 import pool from "./models/model.ts"
 import { testDbConnection } from "./models/model.ts"
 import problemRoutes from "./routes/problem.routes.ts"
+import testRoutes from "./routes/test.routes.ts"
 
 const app = express()
 const PORT = process.env.PORT || 3000;
@@ -14,6 +15,7 @@ app.use(express.urlencoded({ extended: true }))
 // Public Route: Used for getting the JWT token
 app.use("/api/auth", authRoutes);
 app.use("/api/problem", problemRoutes);
+app.use("/api/test", testRoutes);
 
 // 2. Protected Route: Only accessible with a valid token
 // This is where you'd put coding tests or user-specific data
