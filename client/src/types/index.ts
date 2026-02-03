@@ -31,5 +31,7 @@ export interface Problem {
 
 export interface User {
   username: string;
-  role: "admin";
+  role: "admin" | "student";
+  rollNumber?: string;
+  email?: string;
 }
