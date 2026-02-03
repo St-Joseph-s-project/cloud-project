@@ -2,8 +2,7 @@ import express from "express"
 import authRoutes from "./routes/auth.routes.ts"
 import pool from "./models/model.ts"
 import { testDbConnection } from "./models/model.ts"
-// 1. Import the middleware you created
-// import { authMiddleware } from "./middlewares/ex.middleware.ts" 
+import problemRoutes from "./routes/problem.routes.ts"
 
 const app = express()
 const PORT = process.env.PORT || 3000;
@@ -13,7 +12,8 @@ app.use(express.urlencoded({ extended: true }))
 // --- ROUTES ---
 
 // Public Route: Used for getting the JWT token
-app.use("/api/auth", authRoutes)
+app.use("/api/auth", authRoutes);
+app.use("/api/problem", problemRoutes);
 
 // 2. Protected Route: Only accessible with a valid token
 // This is where you'd put coding tests or user-specific data
