@@ -1,15 +1,40 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../hooks/store';
 import { ChartBarIcon, UsersIcon, CheckBadgeIcon } from '@heroicons/react/24/outline';
+import { dashboardAPI } from '../utils/axios';
 
 const DashboardPage: React.FC = () => {
-    const { items } = useAppSelector((state) => state.problems);
     const { user } = useAppSelector((state) => state.auth);
+    const [statsData, setStatsData] = useState({
+        totalProblems: '0',
+        totalStudents: '0',
+        submissionsToday: '0',
+    });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await dashboardAPI.getStats();
+                setStatsData({
+                    totalProblems: data.totalProblems || '0',
+                    totalStudents: data.totalStudents || '0',
+                    submissionsToday: data.submissionsToday || '0',
+                });
+            } catch (error) {
+                console.error("Error fetching dashboard stats:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
+    }, []);
 
     const stats = [
-        { name: 'Total Problems', stat: items.length.toString(), icon: ChartBarIcon, color: 'bg-blue-500' },
-        { name: 'Total Students', stat: '256', icon: UsersIcon, color: 'bg-green-500' },
-        { name: 'Submissions Today', stat: '45', icon: CheckBadgeIcon, color: 'bg-purple-500' },
+        { name: 'Total Problems', stat: statsData.totalProblems, icon: ChartBarIcon, color: 'bg-blue-500' },
+        { name: 'Total Students', stat: statsData.totalStudents, icon: UsersIcon, color: 'bg-green-500' },
+        { name: 'Submissions Today', stat: statsData.submissionsToday, icon: CheckBadgeIcon, color: 'bg-purple-500' },
     ];
 
     return (
@@ -17,7 +42,7 @@ const DashboardPage: React.FC = () => {
             <div className="mb-8">
                 <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Welcome back, {user?.username}!</h1>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Here's a quick overview of your coding platform performance.
+                    Here's a quick overview of your coding platform performance.{loading && ' (Loading data...)'}
                 </p>
             </div>
 

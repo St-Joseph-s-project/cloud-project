@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authAPI } from '../utils/axios';
 import { useAppDispatch } from '../hooks/store';
 import { login } from '../redux/slices/authSlice';
 import { LockClosedIcon, UserIcon, SunIcon, MoonIcon } from '@heroicons/react/24/outline';
@@ -15,13 +16,15 @@ const LoginPage: React.FC = () => {
 
     const isDark = theme === 'dark';
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (username === 'admin@gmail.com' && password === 'admin123') {
-            dispatch(login({ username: 'admin', role: 'admin' }));
+        try {
+            const data = await authAPI.login({ username, password });
+            dispatch(login({ username: data.username || 'admin', role: data.role || 'admin' }));
             navigate('/dashboard');
-        } else {
-            setError('Invalid credentials. Hint: admin / admin123');
+        } catch (err) {
+            console.error(err);
+            setError('Invalid credentials or login failed');
         }
     };
 
