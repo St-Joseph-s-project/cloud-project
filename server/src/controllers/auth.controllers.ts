@@ -1,9 +1,8 @@
 import type { Request, Response } from "express";
-
 import pool from "../models/model.ts";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-
+// import bcrypt from "bcrypt"; // use bcrypt in prod
 
 dotenv.config();
 
@@ -11,9 +10,8 @@ interface DbUser {
   id: number;
   email: string;
   password: string;
-  role_id: number;
+  role: string;
 }
-
 
 export async function loginAuth(req: Request, res: Response): Promise<Response> {
   try {
@@ -27,7 +25,17 @@ export async function loginAuth(req: Request, res: Response): Promise<Response> 
     }
 
     const { rows } = await pool.query<DbUser>(
-      "SELECT id, email, role_id, password FROM users WHERE email = $1 LIMIT 1",
+      `
+      SELECT 
+        u.id,
+        u.email,
+        u.password,
+        r.role AS role
+      FROM users u
+      JOIN roles r ON u.role_id = r.id
+      WHERE u.email = $1
+      LIMIT 1;
+      `,
       [email]
     );
 
@@ -36,7 +44,10 @@ export async function loginAuth(req: Request, res: Response): Promise<Response> 
       return res.status(401).json({ message: "Invalid email" });
     }
 
-    const isPasswordCorrect = user.password == password;
+    // ⚠️ TEMP (replace with bcrypt.compare in prod)
+    const isPasswordCorrect = user.password === password;
+    // const isPasswordCorrect = await bcrypt.compare(password, user.password);
+
     if (!isPasswordCorrect) {
       return res.status(401).json({ message: "Invalid password" });
     }
@@ -46,7 +57,7 @@ export async function loginAuth(req: Request, res: Response): Promise<Response> 
     }
 
     const token = jwt.sign(
-      { userId: user.id },
+      { userId: user.id, role: user.role },
       process.env.JWT_SECRET_KEY,
       { expiresIn: "7d" }
     );
@@ -63,7 +74,7 @@ export async function loginAuth(req: Request, res: Response): Promise<Response> 
       user: {
         id: user.id,
         email: user.email,
-        role: user.role_id,
+        role: user.role,
       },
     });
   } catch (error) {
