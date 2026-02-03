@@ -1,4 +1,4 @@
-import { Request, Response, RequestHandler } from 'express';
+import type { Request, Response, RequestHandler } from 'express';
 // Import using .js extension for the compiled TypeScript output
 import pool from '../models/model.js'; 
 

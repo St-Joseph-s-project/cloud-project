@@ -3,6 +3,6 @@ import { loginAuth } from "../controllers/auth.controllers.ts";
 
 const router = Router();
 
-router.get("/login", loginAuth)
+router.post("/login", loginAuth)
 
 export default router
