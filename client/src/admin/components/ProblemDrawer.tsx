@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import { XMarkIcon, PencilSquareIcon, CheckIcon, PlayIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
-import type { Problem, Sample, TestCase } from '../types';
+import type { Problem, Sample, TestCase } from '../../types';
 import CustomSelect from './CustomSelect';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import toast from 'react-hot-toast';
@@ -85,16 +85,6 @@ const ProblemDrawer: React.FC<ProblemDrawerProps> = ({ isOpen, mode, initialProb
     const handleDelete = () => {
         if (onDelete && problem.id) {
             onDelete(problem.id);
-            // Toast will be handled in parent or here? 
-            // Better to handle here if we are closing, but strictly the action happens in parent.
-            // Let's assume parent handles logic but we trigger toast or parent triggers toast.
-            // Actually, handleSave calls onSave. handleDelete calls onDelete.
-            // Let's add toast here for consistency, assuming onDelete doesn't throw often.
-            // Or better, let parent handle it if it's async. 
-            // Since our onDelete is sync (redux), we can toast here.
-            // BUT wait, checking user request: "if the problem is created or deleted then it should show a success message"
-            // I'll put it here.
-            // Actually ProblemsPage passes onDelete.
             setIsDeleteModalOpen(false);
             onClose();
         }
@@ -217,15 +207,15 @@ const ProblemDrawer: React.FC<ProblemDrawerProps> = ({ isOpen, mode, initialProb
                                         label="Difficulty"
                                         value={problem.difficulty}
                                         options={difficulties}
-                                        onChange={(val) => updateField('difficulty', val)}
+                                        onChange={(val: string) => updateField('difficulty', val)}
                                         className="z-30"
                                     />
                                 ) : (
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Difficulty</label>
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${problem.difficulty === 'Easy' ? 'bg-green-100 text-green-800 border-green-200' :
-                                                problem.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
-                                                    'bg-red-100 text-red-800 border-red-200'
+                                            problem.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                                                'bg-red-100 text-red-800 border-red-200'
                                             }`}>
                                             {problem.difficulty}
                                         </span>
@@ -239,7 +229,7 @@ const ProblemDrawer: React.FC<ProblemDrawerProps> = ({ isOpen, mode, initialProb
                                         label="Category"
                                         value={problem.category}
                                         options={categories}
-                                        onChange={(val) => updateField('category', val)}
+                                        onChange={(val: string) => updateField('category', val)}
                                         className="z-30"
                                     />
                                 ) : (

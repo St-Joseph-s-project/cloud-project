@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../hooks/store';
-import { addProblem, updateProblem } from '../redux/slices/problemsSlice';
-import type { Problem, Sample, TestCase } from '../types';
+import { useAppSelector, useAppDispatch } from '../../hooks/store';
+import { addProblem, updateProblem } from '../../redux/slices/problemsSlice';
+import type { Problem, Sample, TestCase } from '../../types';
 import OneCompilerEmbed from '../components/OneCompilerEmbed';
 import { PlusIcon, TrashIcon, ArrowLeftIcon, PencilSquareIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
