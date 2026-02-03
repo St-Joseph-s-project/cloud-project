@@ -30,7 +30,7 @@ pool.connect()
   })
   .catch(err => {
     console.error('Database connection error', err.stack);
-    process.exit(1); 
+    process.exit(1);
   });
 
 testDbConnection()

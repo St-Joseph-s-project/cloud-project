@@ -102,7 +102,7 @@ const Layout: React.FC = () => {
                     <div className="flex items-center w-full px-4 py-3">
                         <div className="flex-shrink-0">
                             <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold">
-                                {user?.username.charAt(0).toUpperCase()}
+                                {user?.username?.charAt(0)?.toUpperCase() || 'U'}
                             </div>
                         </div>
                         <div className="ml-3">
