@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useAppSelector } from '../hooks/store';
+import { useAppSelector } from '../../hooks/store';
 import { ChartBarIcon, UsersIcon, CheckBadgeIcon } from '@heroicons/react/24/outline';
-import { dashboardAPI } from '../utils/axios';
+import { dashboardAPI } from '../../utils/axios';
 
 const DashboardPage: React.FC = () => {
     const { user } = useAppSelector((state) => state.auth);
