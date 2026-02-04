@@ -33,8 +33,11 @@ export interface Problem {
 }
 
 export interface User {
-  username: string;
-  role: "admin" | "student";
+  id?: number;
+  username: string; // mapped from name in UI usually
+  name?: string; // from backend
+  role: "admin" | "student" | string;
+  role_id?: number;
   rollNumber?: string;
   email?: string;
 }

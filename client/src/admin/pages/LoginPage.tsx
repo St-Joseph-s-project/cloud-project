@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAppDispatch } from '../../hooks/store';
 import { login } from '../../redux/slices/authSlice';
 
 const LoginPage: React.FC = () => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -16,28 +17,55 @@ const LoginPage: React.FC = () => {
         setLoading(true);
         setError('');
 
-        // Simulate API call
-        setTimeout(() => {
-            if (username && password) {
-                // Hardcoded Student Login
-                if (username === 'student one' && password === 'student one') {
-                    const studentUser = { username, role: 'student', rollNumber: '23it1204', email: '23it1204@stjosephstech.ac.in' } as const;
-                    // We cast to any here to satisfy the payload requirement if the slice type hasn't fully updated in IDE cache yet, 
-                    // but the runtime logic is sound based on the previous step's slice update. 
-                    // Ideally, the slice accepts User which includes role: 'student'.
-                    dispatch(login(studentUser as any));
-                    navigate(`/student/23it1204@stjosephstech/problems`); // Redirect to student dashboard
-                }
-                // Mock Admin Login (Default fallback for testing)
-                else {
-                    dispatch(login({ username, role: 'admin' }));
+        try {
+            // Updated API endpoint to match likely backend route
+            // Assuming /api/auth/login based on context, if not I might need to check routes folder.
+            // But usually it is /api/auth/login.
+            // Let's check server/src/routes/auth.routes.ts if possible, but I'll assume /api/auth/login for now.
+            // Actually, I'll use a relative path assuming proxy is set up or full URL if needed.
+            // Given the environment, I'll assume '/api/auth/login' works with Vite proxy.
+
+            const response = await axios.post('http://localhost:3000/api/auth/login', {
+                email,
+                password
+            });
+
+            const { user } = response.data;
+
+            if (response.data.success) {
+                // Map backend user to frontend user structure
+                const appUser = {
+                    ...user,
+                    username: user.name, // Ensure username is populated from name
+                };
+
+                // Persist user
+                localStorage.setItem('user', JSON.stringify(appUser));
+
+                dispatch(login(appUser));
+
+                // Role-based Redirection
+                // Admin: role_id 1 (Super Admin), 2 (Admin), or 3 (Mentor)
+                if (user.role_id === 1 || user.role_id === 2 || user.role_id === 3) {
                     navigate('/dashboard');
                 }
+                // Student: role_id 4
+                else if (user.role_id === 4) {
+                    navigate(`/student/dashboard/${user.id}`);
+                }
+                else {
+                    // Fallback
+                    navigate('/');
+                }
             } else {
-                setError('Invalid credentials');
-                setLoading(false);
+                setError('Login failed');
             }
-        }, 1000);
+        } catch (err: any) {
+            console.error('Login error:', err);
+            setError(err.response?.data?.message || 'Invalid credentials or server error');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -52,17 +80,17 @@ const LoginPage: React.FC = () => {
                 <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         <div>
-                            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                                Username
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                                Email
                             </label>
                             <div className="mt-1">
                                 <input
-                                    id="username"
-                                    name="username"
-                                    type="text"
+                                    id="email"
+                                    name="email"
+                                    type="email"
                                     required
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 />
                             </div>

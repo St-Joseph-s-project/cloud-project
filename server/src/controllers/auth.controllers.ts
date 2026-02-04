@@ -13,34 +13,46 @@ interface DbUser {
   role: string;
 }
 
-export async function loginAuth(req: Request, res: Response): Promise<Response> {
+export async function loginAuth(
+  req: Request,
+  res: Response,
+): Promise<Response> {
   try {
     const { email, password } = req.body as {
       email?: string;
       password?: string;
     };
 
+    console.log("Login attempt:", { email, password });
+
     if (!email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const { rows } = await pool.query<DbUser>(
+    const { rows } = await pool.query<
+      DbUser & { role_id: number; name: string }
+    >(
       `
       SELECT 
         u.id,
         u.email,
+        u.name,
         u.password,
+        u.role_id,
         r.role AS role
       FROM users u
       JOIN roles r ON u.role_id = r.id
       WHERE u.email = $1
       LIMIT 1;
       `,
-      [email]
+      [email],
     );
+
+    console.log("Query result rows:", rows);
 
     const user = rows[0];
     if (!user) {
+      console.log("User not found for email:", email);
       return res.status(401).json({ message: "Invalid email" });
     }
 
@@ -57,9 +69,9 @@ export async function loginAuth(req: Request, res: Response): Promise<Response> 
     }
 
     const token = jwt.sign(
-      { userId: user.id, role: user.role },
+      { userId: user.id, role: user.role, role_id: user.role_id },
       process.env.JWT_SECRET_KEY,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     res.cookie("jwt", token, {
@@ -73,8 +85,10 @@ export async function loginAuth(req: Request, res: Response): Promise<Response> 
       success: true,
       user: {
         id: user.id,
+        name: user.name,
         email: user.email,
         role: user.role,
+        role_id: user.role_id,
       },
     });
   } catch (error) {
