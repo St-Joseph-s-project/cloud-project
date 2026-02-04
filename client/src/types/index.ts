@@ -10,6 +10,8 @@ export interface TestCase {
   id: string;
   input: string;
   output: string;
+  isHidden?: boolean;
+  weight?: number;
 }
 
 export interface Sample {
@@ -24,7 +26,8 @@ export interface Problem {
   title: string;
   description: string;
   difficulty: Difficulty;
-  category: Category;
+  category?: Category; // Made optional as removed from UI
+  output_weight?: number;
   samples: Sample[];
   testCases: TestCase[];
 }

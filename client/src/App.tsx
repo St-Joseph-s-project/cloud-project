@@ -51,11 +51,12 @@ const App: React.FC = () => {
                 <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                     <Route path="dashboard" element={<DashboardPage />} />
                     <Route path="problems" element={<ProblemsPage />} />
+                    <Route path="problems/create" element={<CreateProblemPage />} />
                     <Route path="problems/:id" element={<ProblemForm />} />
                     <Route path="students" element={<StudentDataPage />} />
                     <Route path="leaderboard" element={<LeaderboardPage />} />
                 </Route>
-                <Route path="/problems/create" element={<ProtectedRoute><CreateProblemPage /></ProtectedRoute>} />
+
 
 
                 {/* Student Routes */}
