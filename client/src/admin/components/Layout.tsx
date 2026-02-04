@@ -12,6 +12,7 @@ const Layout: React.FC = () => {
     const { theme, toggleTheme } = useTheme();
 
     const handleLogout = () => {
+        localStorage.removeItem('user');
         dispatch(logout());
         navigate('/login');
     };

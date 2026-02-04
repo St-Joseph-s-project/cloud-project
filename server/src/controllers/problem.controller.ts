@@ -1,6 +1,6 @@
 import type { Request, Response, RequestHandler } from 'express';
 // Import using .js extension for the compiled TypeScript output
-import pool from '../models/model.js';
+import pool from '../models/model.ts';
 
 /**
  * Controller to handle problem submission using your exact PostgreSQL schema
