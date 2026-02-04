@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { problemsAPI } from '../../utils/axios';
+
 interface Problem {
-    id: string;
+    id: string; // or number if backend returns number, but keeping string for flexibility
     title: string;
-    difficulty: 'Easy' | 'Medium' | 'Hard';
+    difficulty: 'Easy' | 'Medium' | 'Hard' | string; // Allowing string for now as backend data might vary
     tags: string[];
     acceptanceRate: number;
     status: 'Solved' | 'Attempted' | 'Not Attempted';
@@ -14,24 +16,36 @@ const Problems: React.FC = () => {
     const navigate = useNavigate();
     const { studentId } = useParams<{ studentId: string }>();
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [problems, setProblems] = useState<Problem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const problems: Problem[] = [
-        { id: 'two-sum', title: 'Two Sum', difficulty: 'Easy', tags: ['Array', 'Hash Table'], acceptanceRate: 49.2, status: 'Solved' },
-        { id: 'add-two-numbers', title: 'Add Two Numbers', difficulty: 'Medium', tags: ['Linked List', 'Math'], acceptanceRate: 38.5, status: 'Solved' },
-        { id: 'longest-substring', title: 'Longest Substring Without Repeating Characters', difficulty: 'Medium', tags: ['String', 'Sliding Window'], acceptanceRate: 33.8, status: 'Attempted' },
-        { id: 'median-sorted-arrays', title: 'Median of Two Sorted Arrays', difficulty: 'Hard', tags: ['Array', 'Binary Search'], acceptanceRate: 35.4, status: 'Not Attempted' },
-        { id: 'longest-palindrome', title: 'Longest Palindromic Substring', difficulty: 'Medium', tags: ['String', 'Dynamic Programming'], acceptanceRate: 32.1, status: 'Solved' },
-        { id: 'zigzag-conversion', title: 'Zigzag Conversion', difficulty: 'Medium', tags: ['String'], acceptanceRate: 44.3, status: 'Not Attempted' },
-        { id: 'reverse-integer', title: 'Reverse Integer', difficulty: 'Medium', tags: ['Math'], acceptanceRate: 27.5, status: 'Attempted' },
-        { id: 'string-to-integer', title: 'String to Integer (atoi)', difficulty: 'Medium', tags: ['String'], acceptanceRate: 16.8, status: 'Not Attempted' },
-        { id: 'palindrome-number', title: 'Palindrome Number', difficulty: 'Easy', tags: ['Math'], acceptanceRate: 53.7, status: 'Solved' },
-        { id: 'regular-expression', title: 'Regular Expression Matching', difficulty: 'Hard', tags: ['String', 'Dynamic Programming'], acceptanceRate: 27.9, status: 'Not Attempted' },
-        { id: 'container-water', title: 'Container With Most Water', difficulty: 'Medium', tags: ['Array', 'Two Pointers'], acceptanceRate: 54.2, status: 'Solved' },
-        { id: 'integer-to-roman', title: 'Integer to Roman', difficulty: 'Medium', tags: ['Hash Table', 'Math'], acceptanceRate: 61.5, status: 'Not Attempted' },
-        { id: 'roman-to-integer', title: 'Roman to Integer', difficulty: 'Easy', tags: ['Hash Table', 'Math'], acceptanceRate: 58.9, status: 'Solved' },
-        { id: 'longest-common-prefix', title: 'Longest Common Prefix', difficulty: 'Easy', tags: ['String'], acceptanceRate: 41.2, status: 'Attempted' },
-        { id: '3sum', title: '3Sum', difficulty: 'Medium', tags: ['Array', 'Two Pointers'], acceptanceRate: 32.7, status: 'Not Attempted' },
-    ];
+    useEffect(() => {
+        const fetchProblems = async () => {
+            try {
+                const response = await problemsAPI.getAll();
+                if (response.success) {
+                    // Map backend data to frontend interface
+                    const mappedProblems = response.data.map((p: any) => ({
+                        id: p.id,
+                        title: p.title,
+                        difficulty: p.difficulty || 'Medium',
+                        tags: ['Algorithm'], // Mocking tags as they are not in DB yet
+                        acceptanceRate: 0, // Mocking rate
+                        status: 'Not Attempted' // Mocking status
+                    }));
+                    setProblems(mappedProblems);
+                }
+            } catch (err: any) {
+                console.error("Failed to fetch problems:", err);
+                setError("Failed to load problems. Please try again later.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProblems();
+    }, []);
 
     // Calculate tag counts
     const tagCounts = useMemo(() => {
@@ -42,7 +56,7 @@ const Problems: React.FC = () => {
             });
         });
         return Object.entries(counts).sort((a, b) => b[1] - a[1]); // Sort by count descending
-    }, []);
+    }, [problems]);
 
     // Filter problems based on selected tags
     const filteredProblems = useMemo(() => {
@@ -50,7 +64,7 @@ const Problems: React.FC = () => {
         return problems.filter(problem =>
             selectedTags.every(tag => problem.tags.includes(tag))
         );
-    }, [selectedTags]);
+    }, [selectedTags, problems]);
 
     const toggleTag = (tag: string) => {
         setSelectedTags(prev =>
@@ -101,6 +115,22 @@ const Problems: React.FC = () => {
                 );
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-blue"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh] text-red-500 font-medium">
+                {error}
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8 font-sans animate-fade-in-up">

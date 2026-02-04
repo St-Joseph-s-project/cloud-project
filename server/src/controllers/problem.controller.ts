@@ -1,6 +1,6 @@
 import type { Request, Response, RequestHandler } from 'express';
 // Import using .js extension for the compiled TypeScript output
-import pool from '../models/model.ts';
+import pool from '../models/model.js';
 
 /**
  * Controller to handle problem submission using your exact PostgreSQL schema
@@ -73,7 +73,7 @@ export const handleProblemSubmission: RequestHandler = async (req: Request, res:
 export const getAllProblems: RequestHandler = async (req: Request, res: Response) => {
     try {
         const query = `
-            SELECT title, module_id, difficulty, order_index, is_published FROM problems;
+            SELECT id, title, module_id, difficulty, order_index, is_published FROM problems;
         `;
         const result = await pool.query(query);
         res.status(200).json({
@@ -163,6 +163,92 @@ export const deleteProblem: RequestHandler = async (req: Request, res: Response)
             success: false,
             error: "Internal Server Error",
             details: errorMessage
+        });
+    }
+};
+
+export const createProblemWithDetails: RequestHandler = async (req: Request, res: Response) => {
+    try {
+        const {
+            title,
+            description,
+            difficulty,
+            testCases,
+            output_weight,
+            created_by
+        } = req.body;
+
+        // ... existing code ...
+
+        // Insert Problem
+        const problemQuery = `
+            INSERT INTO problems (
+                title, 
+                description, 
+                difficulty, 
+                order_index, 
+                created_by, 
+                is_published
+            ) 
+            VALUES ($1, $2, $3, $4, $5, $6) 
+            RETURNING *;
+        `;
+        // Mocking created_by as 1 for admin if not provided
+        let creatorId = created_by ? Number(created_by) : null;
+
+        if (!creatorId) {
+            // Fallback: Fetch the first available user (ideally an admin)
+            const userResult = await pool.query('SELECT id FROM users LIMIT 1');
+            if (userResult.rows.length > 0) {
+                creatorId = userResult.rows[0].id;
+            } else {
+                // If no users exist at all, we can't create a problem due to FK constraint
+                res.status(400).json({
+                    success: false,
+                    error: "No users found in database to assign as creator."
+                });
+                return;
+            }
+        }
+
+        const problemValues = [
+            title,
+            description,
+            difficulty,
+            0,
+            creatorId,
+            true
+        ];
+
+        const problemResult = await pool.query(problemQuery, problemValues);
+        const newProblem = problemResult.rows[0];
+
+        // 3. Insert Test Cases
+        if (testCases && Array.isArray(testCases) && testCases.length > 0) {
+            const testCaseValues = testCases.map((tc: any) => {
+                return `(${newProblem.id}, '${tc.input.replace(/'/g, "''")}', '${tc.output.replace(/'/g, "''")}', ${tc.isHidden || false}, ${output_weight || tc.weight || 0})`;
+            }).join(',');
+
+            const testCaseQuery = `
+                INSERT INTO test_cases (problem_id, input, output, is_hidden, weight)
+                VALUES ${testCaseValues}
+                RETURNING *;
+            `;
+            await pool.query(testCaseQuery);
+        }
+
+        res.status(201).json({
+            success: true,
+            message: "Problem and test cases created successfully",
+            data: newProblem
+        });
+
+    } catch (error: any) {
+        console.error("Error creating problem with details:", error);
+        res.status(500).json({
+            success: false,
+            error: "Internal Server Error",
+            details: error.message
         });
     }
 };

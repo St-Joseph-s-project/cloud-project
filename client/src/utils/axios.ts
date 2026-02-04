@@ -35,7 +35,11 @@ export const dashboardAPI = {
 
 export const problemsAPI = {
   getAll: async () => {
-    const response = await axiosInstance.get("/problems");
+    const response = await axiosInstance.get("/problem/get-all-problems");
+    return response.data;
+  },
+  create: async (data: any) => {
+    const response = await axiosInstance.post("/problem/create", data);
     return response.data;
   },
 };

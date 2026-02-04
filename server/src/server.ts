@@ -4,9 +4,15 @@ import pool from "./models/model.ts"
 import { testDbConnection } from "./models/model.ts"
 import problemRoutes from "./routes/problem.routes.ts"
 
+import cors from "cors";
+
 const app = express()
 const PORT = process.env.PORT || 3000;
 
+app.use(cors({
+  origin: "http://localhost:5173", // URL of your frontend
+  credentials: true
+}));
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 // --- ROUTES ---

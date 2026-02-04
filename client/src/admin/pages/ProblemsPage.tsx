@@ -20,7 +20,9 @@ const ProblemsPage: React.FC = () => {
     }, [dispatch]);
 
     // Derived State (Filtering logic)
-    const filteredProblems = items.filter((p: Problem) => {
+    // Derived State (Filtering logic)
+    const safeItems = Array.isArray(items) ? items : [];
+    const filteredProblems = safeItems.filter((p: Problem) => {
         const matchCategory = filter.category === 'All' || p.category === filter.category;
         const matchDifficulty = filter.difficulty === 'All' || p.difficulty === filter.difficulty;
         return matchCategory && matchDifficulty;
@@ -32,6 +34,10 @@ const ProblemsPage: React.FC = () => {
         }
         return 0; // 'none'
     });
+
+    // ...
+
+    // (Inside return, I need to check where to modify rendering logic. Step will be applied to the 'filteredProblems' declaration area first)
 
     const getDifficultyColor = (diff: string) => {
         switch (diff) {
@@ -76,8 +82,7 @@ const ProblemsPage: React.FC = () => {
         }
     };
 
-    if (loading && items.length === 0) return <div className="p-8 text-center text-gray-500">Loading problems...</div>;
-    if (error && items.length === 0) return <div className="p-8 text-center text-red-500">Error: {error}</div>;
+
 
     return (
         <div className="relative min-h-full">
@@ -165,28 +170,41 @@ const ProblemsPage: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
-                                    {filteredProblems.map((problem: Problem) => (
-                                        <tr
-                                            key={problem.id}
-                                            className={`hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer ${selectedProblem?.id === problem.id ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}
-                                            onClick={() => handleProblemClick(problem)}
-                                        >
-                                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-gray-100 sm:pl-6">
-                                                {problem.title}
-                                            </td>
-                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getDifficultyColor(problem.difficulty)}`}>
-                                                    {problem.difficulty}
-                                                </span>
-                                            </td>
-                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                                {problem.category}
-                                            </td>
-                                            <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                                <ChevronRightIcon className="h-5 w-5 text-gray-400 inline-block" />
-                                            </td>
+                                    {loading && items.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="py-8 text-center text-sm text-gray-500">Loading problems...</td>
                                         </tr>
-                                    ))}
+                                    ) : error ? (
+                                        <tr>
+                                            <td colSpan={4} className="py-8 text-center text-sm text-red-500">Error: {error}</td>
+                                        </tr>
+                                    ) : filteredProblems.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="py-8 text-center text-sm text-gray-500">No problems found.</td>
+                                        </tr>
+                                    ) : (
+                                        filteredProblems.map((problem: Problem) => (
+                                            <tr
+                                                key={problem.id}
+                                                className={`hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer ${selectedProblem?.id === problem.id ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}
+                                                onClick={() => handleProblemClick(problem)}
+                                            >
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-gray-100 sm:pl-6">
+                                                    {problem.title}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getDifficultyColor(problem.difficulty)}`}>
+                                                        {problem.difficulty}
+                                                    </span>
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                                    {problem.category}
+                                                </td>
+                                                <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                                    <ChevronRightIcon className="h-5 w-5 text-gray-400 inline-block" />
+                                                </td>
+                                            </tr>
+                                        )))}
                                 </tbody>
                             </table>
                         </div>

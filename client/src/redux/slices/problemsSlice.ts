@@ -9,8 +9,20 @@ import { problemsAPI } from "../../utils/axios";
 export const fetchProblems = createAsyncThunk(
   "problems/fetchProblems",
   async () => {
-    const data = await problemsAPI.getAll();
-    return data as Problem[];
+    const response = await problemsAPI.getAll();
+    return response.data; // key change: extracting the array
+  },
+);
+
+export const createProblem = createAsyncThunk(
+  "problems/createProblem",
+  async (problemData: any, { rejectWithValue }) => {
+    try {
+      const data = await problemsAPI.create(problemData);
+      return data.data; // Assuming API returns { success: true, data: ... }
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || "Failed to create problem");
+    }
   },
 );
 
