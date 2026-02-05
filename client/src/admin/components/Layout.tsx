@@ -398,7 +398,7 @@ const Layout: React.FC = () => {
                             {user?.username?.charAt(0)?.toUpperCase() || 'A'}
                         </div>
                     </div>
-                </header>
+                </header> 
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-auto bg-gray-50/50 p-4 sm:p-6 lg:p-8">
