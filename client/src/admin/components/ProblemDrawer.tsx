@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Editor from '@monaco-editor/react';
-import { XMarkIcon, PencilSquareIcon, CheckIcon, PlayIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, PencilSquareIcon, CheckIcon, PlusIcon, TrashIcon, TagIcon, SignalIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import type { Problem, Sample, TestCase } from '../../types';
 import CustomSelect from './CustomSelect';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
@@ -42,28 +41,22 @@ const categories = [
 const ProblemDrawer: React.FC<ProblemDrawerProps> = ({ isOpen, mode, initialProblem, onClose, onSave, onDelete }) => {
     const [isEditable, setIsEditable] = useState(mode === 'create');
     const [problem, setProblem] = useState<Problem>(emptyProblem);
-    const [code, setCode] = useState('// Write your solution here\n');
-    const [language, setLanguage] = useState('javascript');
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
-    const languages = [
-        { value: 'javascript', label: 'JavaScript' },
-        { value: 'python', label: 'Python' },
-        { value: 'java', label: 'Java' },
-        { value: 'cpp', label: 'C++' }
-    ];
 
     useEffect(() => {
         if (isOpen) {
             if (mode === 'create') {
+                // Only reset if we are switching to create mode explicitly
                 setProblem({ ...emptyProblem, id: Date.now().toString() });
                 setIsEditable(true);
             } else if (initialProblem) {
-                setProblem(initialProblem);
+                // Deep merge or complete replacement to ensure all fields are present
+                setProblem({ ...emptyProblem, ...initialProblem });
+                // If viewing, we are not editable by default
                 setIsEditable(false);
             }
         }
-    }, [isOpen, mode, initialProblem]);
+    }, [isOpen, mode, initialProblem]); // Keep dependencies as is, but ensure logic covers all cases
 
     const handleSave = () => {
         try {
@@ -75,11 +68,6 @@ const ProblemDrawer: React.FC<ProblemDrawerProps> = ({ isOpen, mode, initialProb
             toast.error('Failed to save problem');
             console.error(error);
         }
-    };
-
-    const handleRun = () => {
-        console.log(`Running code (${language}):`, code);
-        toast('Code execution simulated (check console)', { icon: '🏃' });
     };
 
     const handleDelete = () => {
@@ -127,294 +115,296 @@ const ProblemDrawer: React.FC<ProblemDrawerProps> = ({ isOpen, mode, initialProb
         setProblem(prev => ({ ...prev, testCases: prev.testCases.filter((_, i) => i !== index) }));
     };
 
+    const getDifficultyColor = (diff: string) => {
+        switch (diff) {
+            case 'Easy': return 'bg-green-100 text-green-700 border-green-200';
+            case 'Medium': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+            case 'Hard': return 'bg-red-100 text-red-700 border-red-200';
+            default: return 'bg-gray-100 text-gray-700 border-gray-200';
+        }
+    };
+
     return (
         <>
             <div className={`fixed inset-0 z-50 overflow-hidden ${isOpen ? '' : 'pointer-events-none'}`}>
-                <div className={`absolute inset-0 bg-transparent transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`} onClick={onClose} />
+                <div className={`absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`} onClick={onClose} />
 
-                <div className={`fixed inset-y-0 right-0 w-3/5 bg-white dark:bg-gray-900 shadow-2xl transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'} flex flex-col`}>
+                <div className={`fixed inset-y-0 right-0 w-full md:w-3/5 lg:w-1/2 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'} flex flex-col`}>
                     {/* Header */}
-                    <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800">
-                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
-                            {mode === 'create' ? 'Create Problem' : (isEditable ? 'Edit Problem' : 'Problem Details')}
-                        </h2>
-                        <div className="flex space-x-2">
+                    <div className="px-8 py-5 border-b border-gray-100 flex justify-between items-center bg-white z-10">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-800">
+                                {mode === 'create' ? 'Create Problem' : (isEditable ? 'Edit Problem' : 'Problem Details')}
+                            </h2>
+                            <p className="text-sm text-gray-500 mt-0.5">
+                                {mode === 'create' ? 'Add a new challenge' : `ID: ${problem.id}`}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
                             {mode !== 'create' && !isEditable && (
                                 <>
                                     <button
                                         onClick={() => setIsEditable(true)}
-                                        className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full"
+                                        className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                         title="Edit"
                                         type="button"
                                     >
-                                        <PencilSquareIcon className="h-6 w-6" />
+                                        <PencilSquareIcon className="h-5 w-5" />
                                     </button>
                                     <button
                                         onClick={() => setIsDeleteModalOpen(true)}
-                                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
+                                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                         title="Delete"
                                         type="button"
                                     >
-                                        <TrashIcon className="h-6 w-6" />
+                                        <TrashIcon className="h-5 w-5" />
                                     </button>
                                 </>
                             )}
                             {isEditable && (
                                 <>
                                     <button
-                                        onClick={handleRun}
-                                        className="px-4 py-2 bg-green-600 text-white rounded-md flex items-center hover:bg-green-700 text-sm font-medium"
-                                        type="button"
-                                    >
-                                        <PlayIcon className="h-4 w-4 mr-2" /> Run
-                                    </button>
-                                    <button
                                         onClick={handleSave}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center hover:bg-blue-700 text-sm font-medium"
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center shadow-sm"
                                         type="button"
                                     >
-                                        <CheckIcon className="h-4 w-4 mr-2" /> Save
+                                        <CheckIcon className="h-4 w-4 mr-2" /> Save Changes
                                     </button>
                                 </>
                             )}
-                            <button onClick={onClose} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full" type="button">
+                            <button
+                                onClick={onClose}
+                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                type="button"
+                            >
                                 <XMarkIcon className="h-6 w-6" />
                             </button>
                         </div>
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                        {/* Metadata */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
-                                {isEditable ? (
+                    <div className="flex-1 overflow-y-auto bg-gray-50/50 p-8 space-y-8">
+                        {/* Title Section */}
+                        <div className="space-y-4">
+                            {isEditable ? (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Problem Title</label>
                                     <input
                                         type="text"
                                         value={problem.title}
                                         onChange={(e) => updateField('title', e.target.value)}
-                                        className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:text-white sm:text-sm p-2 border"
+                                        className="block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-lg px-4 py-3"
+                                        placeholder="e.g. Two Sum"
                                     />
-                                ) : (
-                                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{problem.title}</p>
-                                )}
-                            </div>
+                                </div>
+                            ) : (
+                                <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{problem.title}</h1>
+                            )}
 
-                            <div>
-                                {isEditable ? (
-                                    <CustomSelect
-                                        label="Difficulty"
-                                        value={problem.difficulty}
-                                        options={difficulties}
-                                        onChange={(val: string) => updateField('difficulty', val)}
-                                        className="z-30"
-                                    />
-                                ) : (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Difficulty</label>
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${problem.difficulty === 'Easy' ? 'bg-green-100 text-green-800 border-green-200' :
-                                            problem.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
-                                                'bg-red-100 text-red-800 border-red-200'
-                                            }`}>
+                            {/* Tags Grid */}
+                            <div className="flex flex-wrap gap-4">
+                                <div className="min-w-[140px]">
+                                    {isEditable ? (
+                                        <CustomSelect
+                                            label="Difficulty"
+                                            value={problem.difficulty || 'Easy'}
+                                            options={difficulties}
+                                            onChange={(val: string) => updateField('difficulty', val)}
+                                            className="w-full"
+                                        />
+                                    ) : (
+                                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getDifficultyColor(problem.difficulty)}`}>
+                                            <SignalIcon className="h-4 w-4 mr-2" />
                                             {problem.difficulty}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div>
-                                {isEditable ? (
-                                    <CustomSelect
-                                        label="Category"
-                                        value={problem.category}
-                                        options={categories}
-                                        onChange={(val: string) => updateField('category', val)}
-                                        className="z-30"
-                                    />
-                                ) : (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="min-w-[180px]">
+                                    {isEditable ? (
+                                        <CustomSelect
+                                            label="Category"
+                                            value={problem.category || 'Algorithms'}
+                                            options={categories}
+                                            onChange={(val: string) => updateField('category', val)}
+                                            className="w-full"
+                                        />
+                                    ) : (
+                                        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                            <TagIcon className="h-4 w-4 mr-2" />
                                             {problem.category}
-                                        </span>
-                                    </div>
-                                )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
                         {/* Description */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <label className="block text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center">
+                                <span className="w-1 h-4 bg-blue-500 rounded-full mr-2"></span>
+                                Description
+                            </label>
                             {isEditable ? (
                                 <textarea
-                                    rows={6}
+                                    rows={8}
                                     value={problem.description}
                                     onChange={(e) => updateField('description', e.target.value)}
-                                    className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:text-white sm:text-sm p-2 border"
+                                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"
+                                    placeholder="Problem statement..."
                                 />
                             ) : (
-                                <div className="prose prose-blue dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 whitespace-pre-wrap bg-gray-50 dark:bg-gray-800/50 p-4 rounded-md">
+                                <div className="prose prose-blue max-w-none text-gray-600 bg-gray-50 p-4 rounded-lg border border-gray-100">
                                     {problem.description}
                                 </div>
                             )}
                         </div>
 
                         {/* Sample Cases */}
-                        <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Sample Cases</h3>
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <label className="block text-sm font-bold text-gray-900 uppercase tracking-wide flex items-center">
+                                    <span className="w-1 h-4 bg-green-500 rounded-full mr-2"></span>
+                                    Sample Cases
+                                </label>
                                 {isEditable && (
                                     <button
                                         onClick={addSample}
-                                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+                                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none shadow-sm transition-all"
                                         type="button"
                                     >
-                                        <PlusIcon className="-ml-0.5 mr-2 h-4 w-4" /> Add Sample
+                                        <PlusIcon className="mr-1.5 h-3.5 w-3.5" /> Add Sample
                                     </button>
                                 )}
                             </div>
-                            <div className="space-y-4">
+
+                            <div className="grid grid-cols-1 gap-4">
                                 {problem.samples.map((sample, idx) => (
-                                    <div key={sample.id} className="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-4 shadow-sm">
+                                    <div key={sample.id} className="relative group bg-gray-50 border border-gray-200 rounded-lg p-5 transition-all hover:shadow-md">
                                         {isEditable && (
-                                            <button onClick={() => removeSample(idx)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500" type="button">
+                                            <button onClick={() => removeSample(idx)} className="absolute top-3 right-3 text-gray-400 hover:text-red-500 p-1 hover:bg-red-50 rounded-md transition-colors" type="button">
                                                 <TrashIcon className="h-4 w-4" />
                                             </button>
                                         )}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Input</label>
-                                                {isEditable ? (
-                                                    <textarea
-                                                        rows={2}
-                                                        value={sample.input}
-                                                        onChange={(e) => updateSample(idx, 'input', e.target.value)}
-                                                        className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm dark:bg-gray-800 dark:text-white text-sm"
-                                                    />
-                                                ) : (
-                                                    <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm font-mono text-gray-800 dark:text-gray-200">{sample.input}</div>
-                                                )}
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <span className="text-xs font-semibold text-gray-500 uppercase">Input</span>
+                                                    {isEditable ? (
+                                                        <textarea
+                                                            rows={2}
+                                                            value={sample.input}
+                                                            onChange={(e) => updateSample(idx, 'input', e.target.value)}
+                                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm font-mono"
+                                                        />
+                                                    ) : (
+                                                        <div className="mt-1 bg-white border border-gray-200 p-2.5 rounded-md text-sm font-mono text-gray-800">{sample.input}</div>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <span className="text-xs font-semibold text-gray-500 uppercase">Output</span>
+                                                    {isEditable ? (
+                                                        <textarea
+                                                            rows={2}
+                                                            value={sample.output}
+                                                            onChange={(e) => updateSample(idx, 'output', e.target.value)}
+                                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm font-mono"
+                                                        />
+                                                    ) : (
+                                                        <div className="mt-1 bg-white border border-gray-200 p-2.5 rounded-md text-sm font-mono text-gray-800">{sample.output}</div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Output</label>
-                                                {isEditable ? (
-                                                    <textarea
-                                                        rows={2}
-                                                        value={sample.output}
-                                                        onChange={(e) => updateSample(idx, 'output', e.target.value)}
-                                                        className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm dark:bg-gray-800 dark:text-white text-sm"
-                                                    />
-                                                ) : (
-                                                    <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm font-mono text-gray-800 dark:text-gray-200">{sample.output}</div>
-                                                )}
-                                            </div>
-                                            <div className="md:col-span-2">
-                                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Explanation</label>
-                                                {isEditable ? (
-                                                    <input
-                                                        type="text"
-                                                        value={sample.explanation || ''}
-                                                        onChange={(e) => updateSample(idx, 'explanation', e.target.value)}
-                                                        className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm dark:bg-gray-800 dark:text-white text-sm"
-                                                    />
-                                                ) : (
-                                                    <div className="text-sm text-gray-700 dark:text-gray-300 italic">{sample.explanation}</div>
-                                                )}
-                                            </div>
+                                            {sample.explanation && (
+                                                <div className="pt-2 border-t border-gray-200">
+                                                    <span className="text-xs font-semibold text-gray-500 uppercase">Explanation</span>
+                                                    {isEditable ? (
+                                                        <input
+                                                            type="text"
+                                                            value={sample.explanation}
+                                                            onChange={(e) => updateSample(idx, 'explanation', e.target.value)}
+                                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
+                                                        />
+                                                    ) : (
+                                                        <p className="mt-1 text-sm text-gray-600 bg-blue-50/50 p-2 rounded border border-blue-100">{sample.explanation}</p>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
                                 {problem.samples.length === 0 && (
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">No sample cases added.</p>
+                                    <div className="text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                                        <BeakerIcon className="mx-auto h-8 w-8 text-gray-300" />
+                                        <p className="mt-2 text-sm text-gray-500">No sample cases available.</p>
+                                    </div>
                                 )}
                             </div>
                         </div>
 
                         {/* Hidden Test Cases */}
-                        <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Hidden Test Cases</h3>
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <label className="block text-sm font-bold text-gray-900 uppercase tracking-wide flex items-center">
+                                    <span className="w-1 h-4 bg-purple-500 rounded-full mr-2"></span>
+                                    Test Cases (Hidden)
+                                </label>
                                 {isEditable && (
                                     <button
                                         onClick={addTestCase}
-                                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+                                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none shadow-sm transition-all"
                                         type="button"
                                     >
-                                        <PlusIcon className="-ml-0.5 mr-2 h-4 w-4" /> Add Test Case
+                                        <PlusIcon className="mr-1.5 h-3.5 w-3.5" /> Add Test Case
                                     </button>
                                 )}
                             </div>
+
                             <div className="space-y-4">
                                 {problem.testCases.map((tc, idx) => (
-                                    <div key={tc.id} className="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-4 shadow-sm">
+                                    <div key={tc.id} className="relative group bg-gray-50 border border-gray-200 rounded-lg p-5 transition-all hover:shadow-md">
                                         {isEditable && (
-                                            <button onClick={() => removeTestCase(idx)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500" type="button">
+                                            <button onClick={() => removeTestCase(idx)} className="absolute top-3 right-3 text-gray-400 hover:text-red-500 p-1 hover:bg-red-50 rounded-md transition-colors" type="button">
                                                 <TrashIcon className="h-4 w-4" />
                                             </button>
                                         )}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Input</label>
+                                                <span className="text-xs font-semibold text-gray-500 uppercase">Input</span>
                                                 {isEditable ? (
                                                     <textarea
-                                                        rows={3}
+                                                        rows={2}
                                                         value={tc.input}
                                                         onChange={(e) => updateTestCase(idx, 'input', e.target.value)}
-                                                        className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm dark:bg-gray-800 dark:text-white text-sm font-mono"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm font-mono"
                                                     />
                                                 ) : (
-                                                    <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm font-mono text-gray-800 dark:text-gray-200">{tc.input}</div>
+                                                    <div className="mt-1 bg-white border border-gray-200 p-2.5 rounded-md text-sm font-mono text-gray-800">{tc.input}</div>
                                                 )}
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Expected Output</label>
+                                                <span className="text-xs font-semibold text-gray-500 uppercase">Expected Output</span>
                                                 {isEditable ? (
                                                     <textarea
-                                                        rows={3}
+                                                        rows={2}
                                                         value={tc.output}
                                                         onChange={(e) => updateTestCase(idx, 'output', e.target.value)}
-                                                        className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm dark:bg-gray-800 dark:text-white text-sm font-mono"
+                                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm font-mono"
                                                     />
                                                 ) : (
-                                                    <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm font-mono text-gray-800 dark:text-gray-200">{tc.output}</div>
+                                                    <div className="mt-1 bg-white border border-gray-200 p-2.5 rounded-md text-sm font-mono text-gray-800">{tc.output}</div>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
                                 ))}
                                 {problem.testCases.length === 0 && (
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">No hidden test cases added.</p>
+                                    <div className="text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                                        <BeakerIcon className="mx-auto h-8 w-8 text-gray-300" />
+                                        <p className="mt-2 text-sm text-gray-500">No test cases added.</p>
+                                    </div>
                                 )}
                             </div>
                         </div>
-
-                        {/* Monaco Editor (For checking code) */}
-                        {isEditable && (
-                            <div className="border border-gray-300 dark:border-gray-700 rounded-md overflow-hidden z-0 relative">
-                                <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 flex justify-between items-center">
-                                    <span>Solution Verification (Editor)</span>
-                                    <div className="w-40">
-                                        <CustomSelect
-                                            value={language}
-                                            options={languages}
-                                            onChange={setLanguage}
-                                            className="text-xs"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="h-64">
-                                    <Editor
-                                        height="100%"
-                                        language={language}
-                                        theme="vs-dark"
-                                        value={code}
-                                        onChange={(val) => setCode(val || '')}
-                                        options={{ minimap: { enabled: false } }}
-                                    />
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
