@@ -4,16 +4,16 @@ import {
     StarIcon,
     FireIcon,
     ChartBarIcon,
-    UserGroupIcon,
+    // UserGroupIcon,
     ArrowTrendingUpIcon,
     ShieldCheckIcon,
-    ChevronRightIcon
+    // ChevronRightIcon
 } from '@heroicons/react/24/solid';
 import {
-    UserIcon,
-    AcademicCapIcon,
+    // UserIcon,
+    // AcademicCapIcon,
     CalendarIcon,
-    ClockIcon
+    // ClockIcon
 } from '@heroicons/react/24/outline';
 
 interface LeaderboardEntry {

@@ -6,13 +6,13 @@ import {
     PlusIcon,
     MagnifyingGlassIcon,
     PuzzlePieceIcon,
-    TrophyIcon,
+    // TrophyIcon,
     DocumentTextIcon,
     CheckCircleIcon,
     FireIcon,
     ExclamationCircleIcon,
     EyeIcon,
-    PencilSquareIcon,
+    // PencilSquareIcon,
     CircleStackIcon,
     ChevronRightIcon
 } from '@heroicons/react/24/outline';

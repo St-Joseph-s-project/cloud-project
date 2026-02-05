@@ -6,7 +6,7 @@ import { createProblem } from '../../redux/slices/problemsSlice';
 import type { Problem, Sample, TestCase } from '../../types';
 import {
     ArrowLeftIcon,
-    ArrowRightIcon,
+    // ArrowRightIcon,
     PlayIcon,
     CheckIcon,
     PlusIcon,
