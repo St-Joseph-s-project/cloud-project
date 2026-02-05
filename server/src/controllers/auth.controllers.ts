@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import pool from "../models/model.ts";
+import pool from "../config/db.ts";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 // import bcrypt from "bcrypt"; // use bcrypt in prod
