@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
-import { useAppDispatch } from '../../hooks/store';
-import { addProblem } from '../../redux/slices/problemsSlice';
+import { useAppDispatch, useAppSelector } from '../../hooks/store';
+import { addProblem, createProblem } from '../../redux/slices/problemsSlice';
 import type { Problem, Sample, TestCase } from '../../types';
 import {
     ChevronRightIcon,
@@ -16,11 +16,12 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
-type Category = 'Algorithms' | 'Data Structures' | 'SQL Database' | 'OS' | 'System Design';
+
 
 const CreateProblemPage: React.FC = () => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
+    const { user } = useAppSelector((state) => state.auth);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [editorLanguage, setEditorLanguage] = useState('javascript');
@@ -30,7 +31,6 @@ const CreateProblemPage: React.FC = () => {
         title: '',
         description: '',
         difficulty: 'Easy',
-        category: 'Algorithms',
         samples: [],
         testCases: []
     });
@@ -42,15 +42,20 @@ const CreateProblemPage: React.FC = () => {
         { value: 'cpp', label: 'C++' }
     ];
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!problem.title || !problem.description) {
             toast.error('Title and description are required');
             return;
         }
-        const newProblem = { ...problem, id: Date.now().toString() };
-        dispatch(addProblem(newProblem));
-        toast.success('Problem created successfully');
-        navigate('/problems');
+        try {
+            // Dispatch createProblem thunk
+            await dispatch(createProblem({ ...problem, created_by: (user as any)?.id })).unwrap();
+            toast.success('Problem created successfully');
+            navigate('/problems');
+        } catch (error) {
+            console.error("Failed to save problem:", error);
+            toast.error('Failed to save problem');
+        }
     };
 
     const handleRunCode = () => {
@@ -146,19 +151,16 @@ const CreateProblemPage: React.FC = () => {
                                             <option value="Hard">Hard</option>
                                         </select>
                                     </div>
+
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
-                                        <select
-                                            value={problem.category}
-                                            onChange={(e) => setProblem({ ...problem, category: e.target.value as Category })}
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Output Weight</label>
+                                        <input
+                                            type="number"
+                                            value={(problem as any).output_weight || 0}
+                                            onChange={(e) => setProblem({ ...problem, output_weight: parseInt(e.target.value) } as any)}
                                             className="mt-1 block w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white py-2.5 px-4 transition-all"
-                                        >
-                                            <option value="Algorithms">Algorithms</option>
-                                            <option value="Data Structures">Data Structures</option>
-                                            <option value="SQL Database">SQL Database</option>
-                                            <option value="OS">OS</option>
-                                            <option value="System Design">System Design</option>
-                                        </select>
+                                            placeholder="Score per test case"
+                                        />
                                     </div>
                                 </div>
                                 <div>

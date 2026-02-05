@@ -29,10 +29,6 @@ import StudentLeaderboard from './students/pages/Leaderboard';
 const App: React.FC = () => {
     const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
-    // Logic for student default ID - adapt to user object or fallback
-    const rollNumber = user?.rollNumber || '23it1204';
-    const defaultStudentId = `${rollNumber.toLowerCase()}@stjosephstech`;
-
     return (
         <Router>
             <Toaster position="top-right" />
@@ -43,24 +39,30 @@ const App: React.FC = () => {
                 {/* Root Redirect Logic */}
                 <Route path="/" element={
                     isAuthenticated ? (
-                        user?.role === 'admin' ? <Navigate to="/dashboard" replace /> : <Navigate to={`/student/${defaultStudentId}/problems`} replace />
+                        (user?.role_id === 1 || user?.role_id === 2 || user?.role_id === 3) ? <Navigate to="/dashboard" replace /> :
+                            (user?.role_id === 4) ? <Navigate to={`/student/dashboard/${user?.id}`} replace /> :
+                                <Navigate to="/login" replace />
                     ) : <Navigate to="/login" replace />
                 } />
 
-                {/* Admin Routes */}
-                <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                {/* Admin Routes (Role ID 1, 2 & 3) */}
+                <Route element={<ProtectedRoute allowedRoles={[1, 2, 3]}><AdminLayout /></ProtectedRoute>}>
                     <Route path="dashboard" element={<DashboardPage />} />
                     <Route path="problems" element={<ProblemsPage />} />
+                    <Route path="problems/create" element={<CreateProblemPage />} />
                     <Route path="problems/:id" element={<ProblemForm />} />
                     <Route path="students" element={<StudentDataPage />} />
                     <Route path="leaderboard" element={<LeaderboardPage />} />
                 </Route>
-                <Route path="/problems/create" element={<ProtectedRoute><CreateProblemPage /></ProtectedRoute>} />
 
-
-                {/* Student Routes */}
-                <Route path="/student/:studentId" element={<StudentLayout />}>
-                    <Route index element={<Navigate to="problems" replace />} />
+                {/* Student Routes (Role ID 4) */}
+                <Route path="/student/dashboard/:studentId" element={
+                    <ProtectedRoute allowedRoles={[4]}>
+                        <StudentLayout />
+                    </ProtectedRoute>
+                }>
+                    <Route index element={<StudentDashboard />} />
+                    {/* <Route path="profile" element={<StudentDashboard />} />  -- Optional: keep profile if needed as alias or remove. I'll keep it as alias if components link to it, or just remove if I think index is enough. I will comment it out or leave it if it was 'profile' before. Let's make index render Dashboard. check if Sidebar links to profile. */}
                     <Route path="profile" element={<StudentDashboard />} />
                     <Route path="submissions" element={<Submissions />} />
                     <Route path="problems" element={<Problems />} />
@@ -74,7 +76,6 @@ const App: React.FC = () => {
 
                 {/* Catch all */}
                 <Route path="*" element={<Navigate to="/" replace />} />
-
             </Routes>
         </Router>
     );

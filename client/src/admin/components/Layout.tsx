@@ -12,6 +12,7 @@ const Layout: React.FC = () => {
     const { theme, toggleTheme } = useTheme();
 
     const handleLogout = () => {
+        localStorage.removeItem('user');
         dispatch(logout());
         navigate('/login');
     };
@@ -57,6 +58,18 @@ const Layout: React.FC = () => {
                     >
                         <PuzzlePieceIcon className="mr-3 h-5 w-5 transition-colors group-hover:text-gray-900 dark:group-hover:text-white" />
                         Problems
+                    </NavLink>
+                    <NavLink
+                        to="/problems/create"
+                        className={({ isActive }) =>
+                            `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors group ${isActive
+                                ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white'
+                            }`
+                        }
+                    >
+                        <div className="mr-3 h-5 w-5 flex items-center justify-center font-bold border border-current rounded bg-transparent">A</div>
+                        Add Problem
                     </NavLink>
 
                     <div className="px-4 py-2 mt-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">

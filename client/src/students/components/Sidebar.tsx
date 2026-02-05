@@ -20,6 +20,7 @@ const Sidebar: React.FC = () => {
     const navigate = useNavigate();
 
     const handleLogout = () => {
+        localStorage.removeItem('user');
         dispatch(logout());
         navigate('/login');
     };
@@ -41,7 +42,7 @@ const Sidebar: React.FC = () => {
             {/* Navigation Links */}
             <nav className="flex-1 px-4 space-y-1">
                 <NavLink
-                    to={`/student/${studentId}/problems`}
+                    to={`/student/dashboard/${studentId}/problems`}
                     className={({ isActive }) =>
                         `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 text-sm font-medium ${isActive
                             ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
@@ -53,7 +54,7 @@ const Sidebar: React.FC = () => {
                 </NavLink>
 
                 <NavLink
-                    to={`/student/${studentId}/leaderboard`}
+                    to={`/student/dashboard/${studentId}/leaderboard`}
                     className={({ isActive }) =>
                         `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 text-sm font-medium ${isActive
                             ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
@@ -65,7 +66,7 @@ const Sidebar: React.FC = () => {
                 </NavLink>
 
                 <NavLink
-                    to={`/student/${studentId}/profile`}
+                    to={`/student/dashboard/${studentId}/profile`}
                     className={({ isActive }) =>
                         `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 text-sm font-medium ${isActive
                             ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
