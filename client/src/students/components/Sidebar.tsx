@@ -2,20 +2,22 @@ import React from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../../hooks/store';
 import { logout } from '../../redux/slices/authSlice';
-import { useTheme } from '../../context/ThemeContext';
 import {
-    HomeIcon,
     TrophyIcon,
     UserIcon,
     CodeBracketIcon,
-    SunIcon,
-    MoonIcon,
-    ArrowRightOnRectangleIcon
+    ArrowRightOnRectangleIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon
 } from '@heroicons/react/24/outline';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+    isOpen: boolean;
+    onToggle: (open: boolean) => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
     const { studentId } = useParams<{ studentId: string }>();
-    const { theme, toggleTheme } = useTheme();
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
 
@@ -25,92 +27,157 @@ const Sidebar: React.FC = () => {
         navigate('/login');
     };
 
-    const isLight = theme === 'light';
-
     return (
-        <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 min-h-screen flex flex-col shadow-sm sticky top-0 h-screen transition-colors duration-300">
+        <aside
+            className={`bg-white border-r border-blue-100 shadow-lg flex flex-col h-screen sticky top-0 transition-all duration-300 ease-in-out z-30
+                ${isOpen ? 'w-64' : 'w-20'}
+            `}
+        >
             {/* Logo / Header */}
-            <div className="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-700 mb-4">
-                <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center shadow-sm">
-                        <CodeBracketIcon className="w-5 h-5 text-white" />
+            <div className="h-20 flex items-center justify-between px-4 border-b border-blue-50 bg-gradient-to-r from-blue-50 to-white">
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center shadow-md">
+                        <CodeBracketIcon className="w-6 h-6 text-white" />
                     </div>
-                    <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">CodeStudent</span>
+                    {isOpen && (
+                        <div className="flex flex-col">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-blue-500">
+                                CodePro
+                            </span>
+                            <span className="text-sm font-bold tracking-tight text-gray-800">
+                                Student Portal
+                            </span>
+                        </div>
+                    )}
                 </div>
+                {isOpen && (
+                    <button
+                        type="button"
+                        onClick={() => onToggle(false)}
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
+                        aria-label="Collapse sidebar"
+                    >
+                        <ChevronLeftIcon className="w-4 h-4" />
+                    </button>
+                )}
             </div>
 
             {/* Navigation Links */}
-            <nav className="flex-1 px-4 space-y-1">
-                <NavLink
-                    to={`/student/dashboard/${studentId}/problems`}
-                    className={({ isActive }) =>
-                        `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 text-sm font-medium ${isActive
-                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`
-                    }
-                >
-                    <CodeBracketIcon className="w-5 h-5" />
-                    Problems
-                </NavLink>
+            <nav className="flex-1 px-3 py-6 space-y-1">
+                <div className={`${isOpen ? 'px-3 mb-2' : 'px-1 mb-1'}`}>
+                    <NavLink
+                        to={`/student/dashboard/${studentId}/problems`}
+                        className={({ isActive }) =>
+                            `flex items-center ${isOpen ? 'px-3 py-3' : 'px-2 py-3 justify-center'} text-sm font-medium rounded-xl transition-all duration-200 relative ${isActive
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                                : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                            }`
+                        }
+                    >
+                        {({ isActive }) => (
+                            <>
+                                <div className={`${isOpen ? 'mr-3' : ''}`}>
+                                    <CodeBracketIcon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-blue-600'}`} />
+                                </div>
+                                {isOpen && <span>Problems</span>}
+                                {isActive && isOpen && (
+                                    <div className="absolute right-3 w-2 h-2 bg-white rounded-full"></div>
+                                )}
+                            </>
+                        )}
+                    </NavLink>
+                </div>
 
-                <NavLink
-                    to={`/student/dashboard/${studentId}/leaderboard`}
-                    className={({ isActive }) =>
-                        `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 text-sm font-medium ${isActive
-                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`
-                    }
-                >
-                    <TrophyIcon className="w-5 h-5" />
-                    Leaderboard
-                </NavLink>
+                <div className={`${isOpen ? 'px-3 mb-2' : 'px-1 mb-1'}`}>
+                    <NavLink
+                        to={`/student/dashboard/${studentId}/leaderboard`}
+                        className={({ isActive }) =>
+                            `flex items-center ${isOpen ? 'px-3 py-3' : 'px-2 py-3 justify-center'} text-sm font-medium rounded-xl transition-all duration-200 relative ${isActive
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                                : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                            }`
+                        }
+                    >
+                        {({ isActive }) => (
+                            <>
+                                <div className={`${isOpen ? 'mr-3' : ''}`}>
+                                    <TrophyIcon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-blue-600'}`} />
+                                </div>
+                                {isOpen && <span>Leaderboard</span>}
+                                {isActive && isOpen && (
+                                    <div className="absolute right-3 w-2 h-2 bg-white rounded-full"></div>
+                                )}
+                            </>
+                        )}
+                    </NavLink>
+                </div>
 
-                <NavLink
-                    to={`/student/dashboard/${studentId}/profile`}
-                    className={({ isActive }) =>
-                        `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 text-sm font-medium ${isActive
-                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`
-                    }
-                >
-                    <UserIcon className="w-5 h-5" />
-                    Profile
-                </NavLink>
+                <div className={`${isOpen ? 'px-3 mb-2' : 'px-1 mb-1'}`}>
+                    <NavLink
+                        to={`/student/dashboard/${studentId}/profile`}
+                        className={({ isActive }) =>
+                            `flex items-center ${isOpen ? 'px-3 py-3' : 'px-2 py-3 justify-center'} text-sm font-medium rounded-xl transition-all duration-200 relative ${isActive
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                                : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                            }`
+                        }
+                    >
+                        {({ isActive }) => (
+                            <>
+                                <div className={`${isOpen ? 'mr-3' : ''}`}>
+                                    <UserIcon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-blue-600'}`} />
+                                </div>
+                                {isOpen && <span>Profile</span>}
+                                {isActive && isOpen && (
+                                    <div className="absolute right-3 w-2 h-2 bg-white rounded-full"></div>
+                                )}
+                            </>
+                        )}
+                    </NavLink>
+                </div>
             </nav>
 
             {/* Footer / User Profile */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-                <button
-                    onClick={toggleTheme}
-                    className="flex items-center gap-3 w-full px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors text-sm font-medium"
-                >
-                    {isLight ? (
-                        <>
-                            <MoonIcon className="w-5 h-5" />
-                            <span>Dark Mode</span>
-                        </>
-                    ) : (
-                        <>
-                            <SunIcon className="w-5 h-5" />
-                            <span>Light Mode</span>
-                        </>
-                    )}
-                </button>
-
-                <div className="flex items-center gap-3 px-4 py-2">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-xs">
-                        S
+            <div className="p-4 border-t border-blue-50 bg-gradient-to-t from-blue-50/50 to-transparent space-y-3">
+                <div className={`flex items-center ${isOpen ? 'px-2 py-3' : 'justify-center py-3'} rounded-xl bg-blue-50 border border-blue-100`}>
+                    <div className="flex-shrink-0">
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-md">
+                            S
+                        </div>
                     </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white truncate">Student</span>
+                    {isOpen && (
+                        <div className="ml-3 min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-gray-800 truncate">
+                                Student Account
+                            </p>
+                            <p className="text-xs text-blue-600 truncate">
+                                ID: {studentId?.substring(0, 8)}...
+                            </p>
+                        </div>
+                    )}
                 </div>
 
-                <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 w-full px-4 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 transition-colors text-sm font-medium"
-                >
-                    <ArrowRightOnRectangleIcon className="w-5 h-5" />
-                    Logout
-                </button>
+                <div className={`${isOpen ? 'px-2' : 'px-1'}`}>
+                    <button
+                        onClick={handleLogout}
+                        className={`flex items-center ${isOpen ? 'px-3 py-2.5' : 'px-2 py-2.5 justify-center'} text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 border border-red-100 w-full`}
+                    >
+                        <ArrowRightOnRectangleIcon className={`${isOpen ? 'mr-2' : ''} w-5 h-5`} />
+                        {isOpen && <span>Logout</span>}
+                    </button>
+                </div>
+
+                {!isOpen && (
+                    <div className="mt-2 flex justify-center">
+                        <button
+                            onClick={() => onToggle(true)}
+                            className="p-1.5 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
+                            aria-label="Expand sidebar"
+                        >
+                            <ChevronRightIcon className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
             </div>
         </aside>
     );
