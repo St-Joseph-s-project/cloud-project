@@ -1,5 +1,5 @@
 import type { Request, Response, RequestHandler } from 'express';
-import pool from '../models/model.ts';
+import pool from '../config/db.ts';
 
 export const createTest: RequestHandler = async (req: Request, res: Response) => {
     try {

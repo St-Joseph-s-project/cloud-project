@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../../hooks/store';
-import { setCategoryFilter, setDifficultyFilter, setSortBy, addProblem, updateProblem, deleteProblem, fetchProblems } from '../../redux/slices/problemsSlice';
+import { setCategoryFilter, setDifficultyFilter, setSortBy, createProblem, updateProblemThunk, deleteProblemThunk, fetchProblems } from '../../redux/slices/problemsSlice';
 import type { Problem } from '../../types';
 import {
     PlusIcon,
@@ -75,20 +75,26 @@ const ProblemsPage: React.FC = () => {
         setDrawerOpen(true);
     };
 
-    const handleSaveProblem = (problem: Problem) => {
-        if (drawerMode === 'create') {
-            dispatch(addProblem(problem));
-        } else {
-            dispatch(updateProblem(problem));
-        }
-        if (drawerMode === 'create') {
-            setDrawerOpen(false);
+    const handleSaveProblem = async (problem: Problem) => {
+        try {
+            if (drawerMode === 'create') {
+                await dispatch(createProblem(problem)).unwrap();
+            } else {
+                await dispatch(updateProblemThunk({ id: problem.id, data: problem })).unwrap();
+            }
+            if (drawerMode === 'create') {
+                setDrawerOpen(false);
+            }
+            toast.success('Problem saved successfully');
+        } catch (error) {
+            toast.error('Failed to save problem');
+            console.error(error);
         }
     };
 
-    const handleDeleteProblem = (problemId: string) => {
+    const handleDeleteProblem = async (problemId: string) => {
         try {
-            dispatch(deleteProblem(problemId));
+            await dispatch(deleteProblemThunk(problemId)).unwrap();
             toast.success('Problem deleted successfully');
             setDrawerOpen(false);
         } catch (error) {

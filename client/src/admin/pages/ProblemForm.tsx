@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../../hooks/store';
-import { addProblem, updateProblem } from '../../redux/slices/problemsSlice';
+import { useAppDispatch } from '../../hooks/store';
+import { createProblem, updateProblemThunk, fetchProblemById } from '../../redux/slices/problemsSlice';
 import type { Problem, Sample, TestCase } from '../../types';
 import OneCompilerEmbed from '../components/OneCompilerEmbed';
 import {
@@ -21,7 +21,6 @@ const ProblemForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
-    const { items: problems } = useAppSelector((state) => state.problems);
 
     const isNew = id === 'new';
     const [isEditing, setIsEditing] = useState(isNew);
@@ -48,15 +47,14 @@ const ProblemForm: React.FC = () => {
             });
             setIsEditing(true);
         } else if (id) {
-            const problem = problems.find((p: Problem) => p.id === id);
-            if (problem) {
+            dispatch(fetchProblemById(id)).unwrap().then((problem) => {
                 setFormData(problem);
                 setIsEditing(false);
-            } else {
+            }).catch(() => {
                 navigate('/dashboard');
-            }
+            });
         }
-    }, [id, isNew, problems, navigate]);
+    }, [id, isNew, dispatch, navigate]);
 
     const handleChange = (field: keyof Problem, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -92,15 +90,20 @@ const ProblemForm: React.FC = () => {
         setFormData(prev => ({ ...prev, testCases: prev.testCases.filter((_, i) => i !== index) }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (isNew) {
-            const newProblem = { ...formData, id: Date.now().toString() };
-            dispatch(addProblem(newProblem));
-            navigate('/dashboard');
-        } else {
-            dispatch(updateProblem(formData));
-            setIsEditing(false);
+        try {
+            if (isNew) {
+                await dispatch(createProblem(formData)).unwrap();
+                navigate('/dashboard');
+            } else {
+                if (id) {
+                    await dispatch(updateProblemThunk({ id, data: formData })).unwrap();
+                    setIsEditing(false);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to save problem", error);
         }
     };
 
