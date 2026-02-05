@@ -1,7 +1,6 @@
 import express from "express"
 import authRoutes from "./routes/auth.routes.ts"
-import pool from "./models/model.ts"
-import { testDbConnection } from "./models/model.ts"
+import { connectDB } from "./config/db.ts";
 import problemRoutes from "./routes/problem.routes.ts"
 import testRoutes from "./routes/test.routes.ts"
 
@@ -23,22 +22,13 @@ app.use("/api/auth", authRoutes);
 app.use("/api/problem", problemRoutes);
 app.use("/api/test", testRoutes);
 
-// 2. Protected Route: Only accessible with a valid token
-// This is where you'd put coding tests or user-specific data
-
-
 // --- DATABASE & SERVER START ---
 
-pool.connect()
-  .then(() => {
-    console.log('Database connected successfully');
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('Database connection error', err.stack);
-    process.exit(1);
+const startServer = async () => {
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
   });
+};
 
-testDbConnection()
+startServer();

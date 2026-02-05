@@ -75,7 +75,7 @@ export const getAllProblems: RequestHandler = async (
 ) => {
   try {
     const query = `
-            SELECT id, title, module_id, difficulty, order_index, is_published FROM problems;
+            SELECT id, title, description, module_id, difficulty, order_index, is_published FROM problems;
         `;
     const result = await pool.query(query);
     res.status(200).json({
@@ -132,7 +132,8 @@ export const updateProblem: RequestHandler = async (
             difficulty = $3,
             order_index = $4,
             is_published = $5
-            WHERE id = $6;
+            WHERE id = $6
+            RETURNING *;
         `;
     const result = await pool.query(query, [
       title,

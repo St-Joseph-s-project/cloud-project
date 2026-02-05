@@ -38,8 +38,20 @@ export const problemsAPI = {
     const response = await axiosInstance.get("/problem/get-all-problems");
     return response.data;
   },
+  getById: async (id: string) => {
+    const response = await axiosInstance.get(`/problem/get-problem-by-id/${id}`);
+    return response.data;
+  },
   create: async (data: any) => {
-    const response = await axiosInstance.post("/problem/create", data);
+    const response = await axiosInstance.post("/problem/create-problem", data);
+    return response.data;
+  },
+  update: async (id: string, data: any) => {
+    const response = await axiosInstance.put(`/problem/update-problem/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string) => {
+    const response = await axiosInstance.delete(`/problem/delete-problem/${id}`);
     return response.data;
   },
 };
