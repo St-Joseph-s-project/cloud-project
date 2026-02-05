@@ -356,61 +356,60 @@ const Layout: React.FC = () => {
             </div>
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gradient-to-br from-blue-50/30 via-white to-blue-25/20 transition-all duration-300">
+            <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50/50 transition-all duration-300">
                 {/* Top Header */}
-                <header className="h-20 flex items-center justify-between px-6 bg-white border-b border-blue-100 shadow-sm">
+                <header className="h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 bg-white border-b border-gray-200/60 sticky top-0 z-20 backdrop-blur-xl bg-white/80">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className="md:hidden p-2.5 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
+                            className="md:hidden p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
                             aria-label="Toggle sidebar"
                         >
-                            <Bars3Icon className="h-5 w-5" />
+                            <Bars3Icon className="h-6 w-6" />
                         </button>
                         <div className="hidden md:flex items-center">
                             <button
                                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                                className="p-2.5 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
+                                className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
                                 aria-label="Toggle sidebar"
                             >
                                 {isSidebarOpen ? <ChevronLeftIcon className="h-5 w-5" /> : <ChevronRightIcon className="h-5 w-5" />}
                             </button>
                         </div>
                         <div className="flex flex-col">
-                            <h1 className="text-lg font-semibold text-gray-800">
-                                Welcome back, {user?.username || 'Admin'}!
+                            <h1 className="text-lg font-semibold text-gray-800 leading-none">
+                                Welcome back, {user?.username || 'Admin'}
                             </h1>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-xs text-gray-500 mt-1">
                                 CodePro Admin Dashboard
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100">
-                            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-                            <span className="text-xs font-medium text-blue-700">
+                    <div className="flex items-center gap-4">
+                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50/50 border border-emerald-100">
+                            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span className="text-xs font-medium text-emerald-700">
                                 System Active
                             </span>
                         </div>
-                        <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-blue-600 text-white font-bold">
+                        <div className="h-8 w-px bg-gray-200"></div>
+                        <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-gradient-to-tr from-blue-600 to-blue-500 text-white font-bold shadow-sm ring-2 ring-white">
                             {user?.username?.charAt(0)?.toUpperCase() || 'A'}
                         </div>
                     </div>
                 </header>
 
                 {/* Content Area */}
-                <div className="flex-1 overflow-auto">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="bg-white rounded-2xl shadow-lg border border-blue-100 overflow-hidden transition-all duration-300">
-                            <Outlet />
-                        </div>
+                <div className="flex-1 overflow-auto bg-gray-50/50 p-4 sm:p-6 lg:p-8">
+                    <div className="max-w-7xl mx-auto space-y-6">
+                        <Outlet />
 
                         {/* Footer */}
-                        <footer className="mt-8 text-center">
+                        <footer className="mt-12 py-6 text-center border-t border-gray-100">
                             <div className="text-sm text-gray-500">
-                                <p>CodePro Admin Panel v2.0 • © {new Date().getFullYear()} All rights reserved</p>
-                                <p className="mt-1 text-xs">Secure Admin Interface • Last updated: Today</p>
+                                <p className="font-medium">CodePro Admin Panel v2.0</p>
+                                <p className="mt-1 text-xs opacity-75">© {new Date().getFullYear()} All rights reserved • Secure Admin Interface</p>
                             </div>
                         </footer>
                     </div>
