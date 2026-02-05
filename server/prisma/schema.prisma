@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Role {
+  id               Int                @id @default(autoincrement())
+  role             String             @unique @db.VarChar
+  role_permissions role_permissions[]
+  users            User[]
+
+  @@map("roles")
+}
+
+model User {
+  id                                                 Int                @id @default(autoincrement())
+  name                                               String             @db.VarChar
+  email                                              String             @unique @db.VarChar
+  password                                           String             @db.VarChar(255)
+  role_id                                            Int
+  is_super_admin                                     Boolean?           @default(false)
+  college_id                                         Int?
+  department_id                                      Int?
+  created_at                                         DateTime?          @default(now()) @db.Timestamp(6)
+  last_login                                         DateTime?          @db.Timestamp(6)
+  action_logs                                        action_logs[]
+  login_logs                                         login_logs[]
+  modules                                            modules[]
+  createdProblems                                    Problem[]          @relation("ProblemCreator")
+  student_profiles_student_profiles_mentor_idTousers student_profiles[] @relation("student_profiles_mentor_idTousers")
+  student_profiles_student_profiles_user_idTousers   student_profiles?  @relation("student_profiles_user_idTousers")
+  submissions                                        submissions[]
+  test_attempts                                      test_attempts[]
+  createdTests                                       Test[]             @relation("TestCreator")
+  colleges                                           colleges?          @relation(fields: [college_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  departments                                        departments?       @relation(fields: [department_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  role                                               Role               @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([email], map: "idx_users_email")
+  @@map("users")
+}
+
+model Problem {
+  id           Int             @id @default(autoincrement())
+  module_id    Int?
+  title        String          @db.VarChar
+  description  String?
+  difficulty   difficulty_enum
+  order_index  Int?
+  created_by   Int
+  is_published Boolean?        @default(false)
+  creator      User            @relation("ProblemCreator", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  modules      modules?        @relation(fields: [module_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  submissions  submissions[]
+  testProblems TestProblem[]
+  testCases    testcases[]
+
+  @@map("problems")
+}
+
+model Test {
+  id            Int              @id @default(autoincrement())
+  name          String           @db.VarChar
+  batch_id      Int
+  college_id    Int
+  start_time    DateTime?        @db.Timestamp(6)
+  end_time      DateTime?        @db.Timestamp(6)
+  status        test_status_enum @default(NOT_SCHEDULED)
+  created_by    Int
+  test_attempts test_attempts[]
+  testProblems  TestProblem[]
+  batches       batches          @relation(fields: [batch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  colleges      colleges         @relation(fields: [college_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  creator       User             @relation("TestCreator", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([status], map: "idx_tests_status")
+  @@map("tests")
+}
+
+model TestProblem {
+  test_id    Int
+  problem_id Int
+  problem    Problem @relation(fields: [problem_id], references: [id], onDelete: Cascade)
+  test       Test    @relation(fields: [test_id], references: [id], onDelete: Cascade)
+
+  @@unique([test_id, problem_id], map: "test_problems_new_unique")
+  @@map("test_problems")
+}
+
+model action_logs {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  action      String    @db.VarChar
+  target_type String?   @db.VarChar
+  target_id   Int?
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  users       User      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model batches {
+  id               Int                @id @default(autoincrement())
+  batch_year       String             @unique @db.VarChar
+  student_profiles student_profiles[]
+  tests            Test[]
+}
+
+model colleges {
+  id    Int    @id @default(autoincrement())
+  name  String @db.VarChar
+  tests Test[]
+  users User[]
+}
+
+model departments {
+  id               Int                @id(map: "department_pkey") @default(autoincrement())
+  name             String             @db.VarChar
+  student_profiles student_profiles[]
+  users            User[]
+}
+
+model login_logs {
+  id         Int               @id @default(autoincrement())
+  user_id    Int
+  ip_address String?           @db.VarChar
+  status     login_status_enum
+  created_at DateTime?         @default(now()) @db.Timestamp(6)
+  users      User              @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model modules {
+  id            Int       @id @default(autoincrement())
+  parent_id     Int?
+  name          String    @db.VarChar
+  order_index   Int?
+  is_leaf       Boolean?  @default(false)
+  created_by    Int
+  users         User      @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  modules       modules?  @relation("modulesTomodules", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_modules modules[] @relation("modulesTomodules")
+  problems      Problem[]
+}
+
+model permissions {
+  id               Int                @id @default(autoincrement())
+  permission       String             @unique @db.VarChar
+  role_permissions role_permissions[]
+}
+
+model programming_language {
+  id          Int           @id @default(autoincrement())
+  language    String        @unique @db.VarChar
+  submissions submissions[]
+}
+
+model role_permissions {
+  id          Int         @id @default(autoincrement())
+  role        Int
+  permission  Int
+  permissions permissions @relation(fields: [permission], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  roles       Role        @relation(fields: [role], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([role, permission])
+}
+
+model student_platform_profiles {
+  id               Int              @id @default(autoincrement())
+  student_id       Int              @unique
+  leetcode         String?          @db.VarChar
+  hackerrank       String?          @db.VarChar
+  codeforces       String?          @db.VarChar
+  atcoder          String?          @db.VarChar
+  skillrack        String?          @db.VarChar
+  codechef         String?          @db.VarChar
+  student_profiles student_profiles @relation(fields: [student_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model student_profiles {
+  id                                      Int                        @id @default(autoincrement())
+  user_id                                 Int                        @unique
+  department_id                           Int
+  batch_id                                Int
+  mentor_id                               Int?
+  student_platform_profiles               student_platform_profiles?
+  batches                                 batches                    @relation(fields: [batch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departments                             departments                @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_student_profiles_mentor_idTousers User?                      @relation("student_profiles_mentor_idTousers", fields: [mentor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_student_profiles_user_idTousers   User                       @relation("student_profiles_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model submissions {
+  id                   Int                    @id @default(autoincrement())
+  user_id              Int
+  problem_id           Int
+  test_attempt_id      Int?
+  language_id          Int
+  ip_address           String?                @db.VarChar
+  code                 String
+  status               submission_status_enum
+  runtime              Int?
+  memory               Int?
+  created_at           DateTime?              @default(now()) @db.Timestamp(6)
+  programming_language programming_language   @relation(fields: [language_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  problems             Problem                @relation(fields: [problem_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  test_attempts        test_attempts?         @relation(fields: [test_attempt_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                User                   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([problem_id], map: "idx_submissions_problem")
+  @@index([user_id], map: "idx_submissions_user")
+}
+
+model test_attempts {
+  id             Int                      @id @default(autoincrement())
+  test_id        Int
+  user_id        Int
+  start_time     DateTime?                @default(now()) @db.Timestamp(6)
+  end_time       DateTime?                @db.Timestamp(6)
+  attempt_number Int?                     @default(1)
+  status         test_attempt_status_enum
+  submissions    submissions[]
+  tests          Test                     @relation(fields: [test_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users          User                     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_test_attempts_user")
+}
+
+model testcases {
+  id         Int     @id @default(autoincrement())
+  problem_id Int
+  input      String
+  output     String
+  problems   Problem @relation(fields: [problem_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+enum difficulty_enum {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum login_status_enum {
+  SUCCESS
+  FAILURE
+}
+
+enum submission_status_enum {
+  NOT_ATTEMPTED
+  SOLVED
+  WRONG_ANSWER
+}
+
+enum test_attempt_status_enum {
+  STARTED
+  COMPLETED
+}
+
+enum test_status_enum {
+  NOT_SCHEDULED
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
