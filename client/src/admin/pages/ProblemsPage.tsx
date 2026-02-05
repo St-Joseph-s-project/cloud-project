@@ -353,7 +353,7 @@ const ProblemsPage: React.FC = () => {
                                                 >
                                                     <EyeIcon className="h-4 w-4" />
                                                 </button>
-                                                <button
+                                                {/* <button
                                                     className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -362,7 +362,7 @@ const ProblemsPage: React.FC = () => {
                                                     title="Edit Problem"
                                                 >
                                                     <PencilSquareIcon className="h-4 w-4" />
-                                                </button>
+                                                </button> */}
                                                 <ChevronRightIcon className="h-4 w-4 text-gray-400" />
                                             </div>
                                         </div>
