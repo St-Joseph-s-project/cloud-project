@@ -1,4 +1,4 @@
-import pool from "../../config/database.ts";
+import prisma from "../../lib/prisma.ts";
 import type { DbUser } from "../users/user.model.ts";
 import { comparePassword } from "../../utils/password.ts";
 import { generateToken } from "../../utils/jwt.ts";
@@ -35,25 +35,12 @@ export class AuthService {
             };
         }
 
-        // Query user from database
-        const { rows } = await pool.query<DbUser>(
-            `
-      SELECT 
-        u.id,
-        u.email,
-        u.name,
-        u.password,
-        u.role_id,
-        r.role AS role
-      FROM users u
-      JOIN roles r ON u.role_id = r.id
-      WHERE u.email = $1
-      LIMIT 1;
-      `,
-            [email]
-        );
+        // Query user from database with Prisma
+        const user = await prisma.user.findUnique({
+            where: { email },
+            include: { role: true }
+        });
 
-        const user = rows[0];
         if (!user) {
             return {
                 success: false,
@@ -73,7 +60,7 @@ export class AuthService {
         // Generate JWT token
         const token = generateToken({
             userId: user.id,
-            role: user.role,
+            role: user.role.role,
             role_id: user.role_id
         });
 
@@ -84,7 +71,7 @@ export class AuthService {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: user.role,
+                role: user.role.role,
                 role_id: user.role_id
             }
         };
@@ -92,3 +79,4 @@ export class AuthService {
 }
 
 export const authService = new AuthService();
+

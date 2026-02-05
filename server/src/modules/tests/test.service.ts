@@ -1,4 +1,4 @@
-import pool from "../../config/database.ts";
+import prisma from "../../lib/prisma.ts";
 import type {
   Test,
   TestCreateInput,
@@ -13,51 +13,36 @@ export class TestService {
   async createTest(input: TestCreateInput): Promise<Test> {
     const { name, batch_id, college_id, start_time, end_time, created_by } = input;
 
-    const query = `
-      INSERT INTO tests (
-        name, 
-        batch_id, 
-        college_id, 
-        start_time, 
-        end_time, 
+    const test = await prisma.test.create({
+      data: {
+        name,
+        batch_id: batch_id!,
+        college_id: college_id!,
+        start_time,
+        end_time,
         created_by
-      ) 
-      VALUES ($1, $2, $3, $4, $5, $6) 
-      RETURNING *;
-    `;
+      }
+    });
 
-    const result = await pool.query<Test>(query, [
-      name,
-      batch_id,
-      college_id,
-      start_time,
-      end_time,
-      created_by
-    ]);
-
-    return result.rows[0];
+    return test as Test;
   }
 
   /**
    * Get all tests
    */
   async getAllTests(): Promise<Test[]> {
-    const query = `
-      SELECT * FROM tests;
-    `;
-    const result = await pool.query<Test>(query);
-    return result.rows;
+    const tests = await prisma.test.findMany();
+    return tests as Test[];
   }
 
   /**
    * Get test by ID
    */
   async getTestById(id: number): Promise<Test | null> {
-    const query = `
-      SELECT * FROM tests WHERE id = $1;
-    `;
-    const result = await pool.query<Test>(query, [id]);
-    return result.rows[0] || null;
+    const test = await prisma.test.findUnique({
+      where: { id }
+    });
+    return test as Test | null;
   }
 
   /**
@@ -66,56 +51,43 @@ export class TestService {
   async updateTest(id: number, input: TestUpdateInput): Promise<Test> {
     const { name, batch_id, college_id, start_time, end_time, status, created_by } = input;
 
-    const query = `
-      UPDATE tests SET 
-        name = $1,
-        batch_id = $2,
-        college_id = $3,
-        start_time = $4,
-        end_time = $5,
-        status = $6,
-        created_by = $7
-      WHERE id = $8
-      RETURNING *;
-    `;
+    const test = await prisma.test.update({
+      where: { id },
+      data: {
+        name,
+        batch_id,
+        college_id,
+        start_time,
+        end_time,
+        status: status as any,
+        created_by
+      }
+    });
 
-    const result = await pool.query<Test>(query, [
-      name,
-      batch_id,
-      college_id,
-      start_time,
-      end_time,
-      status,
-      created_by,
-      id
-    ]);
-
-    return result.rows[0];
+    return test as Test;
   }
 
   /**
    * Update test status
    */
   async updateTestStatus(id: number, status: string): Promise<Test> {
-    const query = `
-      UPDATE tests SET 
-        status = $1
-      WHERE id = $2
-      RETURNING *;
-    `;
+    const test = await prisma.test.update({
+      where: { id },
+      data: {
+        status: status as any
+      }
+    });
 
-    const result = await pool.query<Test>(query, [status, id]);
-    return result.rows[0];
+    return test as Test;
   }
 
   /**
    * Delete a test
    */
   async deleteTest(id: number): Promise<void> {
-    const query = `
-      DELETE FROM tests WHERE id = $1;
-    `;
-    await pool.query(query, [id]);
+    await prisma.test.delete({
+      where: { id }
+    });
   }
 
   /**
@@ -124,12 +96,12 @@ export class TestService {
   async mapProblemsToTest(mapping: TestProblemMapping): Promise<void> {
     const { test_id, problem_id } = mapping;
 
-    const query = `
-      INSERT INTO test_problems (test_id, problem_id) 
-      VALUES ($1, $2);
-    `;
-
-    await pool.query(query, [test_id, problem_id]);
+    await prisma.testProblem.create({
+      data: {
+        test_id,
+        problem_id
+      }
+    });
   }
 }
 
