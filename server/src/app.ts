@@ -17,10 +17,16 @@ app.use(express.urlencoded({ extended: true }));
 import authRoutes from "./modules/auth/auth.routes.ts";
 import problemRoutes from "./modules/problems/problem.routes.ts";
 import testRoutes from "./modules/tests/test.routes.ts";
+import blogRoutes from "./modules/interview_experience/blogs/blog.routes.ts";
+import commentRoutes from "./modules/interview_experience/comments/comments.routes.ts";
+import tagRoutes from "./modules/interview_experience/blogs/tag.routes.ts";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/problem", problemRoutes);
 app.use("/api/test", testRoutes);
+app.use("/api/blogs", blogRoutes);
+app.use("/api/blogs/comments", commentRoutes);
+app.use("/api/tags", tagRoutes);
 
 // --- ERROR HANDLING ---
 import { errorHandler } from "./middlewares/error.middleware.ts";

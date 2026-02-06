@@ -6,10 +6,19 @@ const PORT = process.env.PORT || 3000;
 // --- DATABASE & SERVER START ---
 
 const startServer = async () => {
-  await connectDB();
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
+  try {
+    console.log("Starting server...");
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
 };
 
-startServer();
+startServer().catch((error) => {
+  console.error("Uncaught error in startServer:", error);
+  process.exit(1);
+});
