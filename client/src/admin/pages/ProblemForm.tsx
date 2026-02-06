@@ -11,12 +11,8 @@ import {
     ArrowLeftIcon,
     PencilSquareIcon,
     CheckIcon,
-    XMarkIcon,
-    DocumentTextIcon,
     CodeBracketIcon,
-    BeakerIcon,
-    InformationCircleIcon,
-    ChevronRightIcon
+    BeakerIcon
 } from '@heroicons/react/24/outline';
 
 const ProblemForm: React.FC = () => {
