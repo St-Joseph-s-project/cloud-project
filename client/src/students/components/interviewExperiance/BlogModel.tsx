@@ -1,0 +1,279 @@
+import React, { useState, useEffect, useCallback } from "react";
+import type {
+  BlogType,
+  CommentType,
+} from "../../../types/pages/interviewExperiance/apiTypes";
+import { commentsAPI, blogsAPI } from "../../../utils/axios";
+import toast from "react-hot-toast";
+
+interface BlogModelProps {
+  blog: BlogType | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onVoteUpdate: (blogId: number, upVote: number, downVote: number, userVote: "up" | "down" | null) => void;
+}
+
+const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpdate }) => {
+  const [comments, setComments] = useState<CommentType[]>([]);
+  const [commentPage, setCommentPage] = useState(1);
+  const [commentTotalPages, setCommentTotalPages] = useState(1);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [voting, setVoting] = useState(false);
+
+  const COMMENTS_PER_PAGE = 5;
+
+  const fetchComments = useCallback(
+    async (page: number) => {
+      if (!blog) return;
+      setLoadingComments(true);
+      try {
+        const res = await commentsAPI.getByBlogId(blog.id, {
+          page,
+          limit: COMMENTS_PER_PAGE,
+        });
+        setComments(res.data.data || []);
+        setCommentTotalPages(res.data.pagination?.totalPages || 1);
+      } catch {
+        console.error("Failed to load comments");
+      } finally {
+        setLoadingComments(false);
+      }
+    },
+    [blog]
+  );
+
+  useEffect(() => {
+    if (isOpen && blog) {
+      setCommentPage(1);
+      setComments([]);
+      setNewComment("");
+      fetchComments(1);
+    }
+  }, [isOpen, blog, fetchComments]);
+
+  useEffect(() => {
+    if (isOpen && blog) {
+      fetchComments(commentPage);
+    }
+  }, [commentPage, isOpen, blog, fetchComments]);
+
+  const handleAddComment = async () => {
+    if (!blog || !newComment.trim()) return;
+    setSubmittingComment(true);
+    try {
+      await commentsAPI.create({ blog_id: blog.id, comment: newComment.trim() });
+      toast.success("Comment added");
+      setNewComment("");
+      setCommentPage(1);
+      fetchComments(1);
+    } catch {
+      toast.error("Failed to add comment");
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  const handleVote = async (isUpVote: boolean) => {
+    if (!blog || voting) return;
+    setVoting(true);
+    try {
+      const res = await blogsAPI.vote({ blog_id: blog.id, is_up_vote: isUpVote });
+      const updated = res.data;
+      onVoteUpdate(blog.id, updated.up_vote, updated.down_vote, updated.user_vote);
+    } catch {
+      toast.error("Failed to vote");
+    } finally {
+      setVoting(false);
+    }
+  };
+
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const timeAgo = (dateStr: string) => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHrs = Math.floor(diffMins / 60);
+    if (diffHrs < 24) return `${diffHrs}h ago`;
+    const diffDays = Math.floor(diffHrs / 24);
+    if (diffDays < 30) return `${diffDays}d ago`;
+    return formatDate(dateStr);
+  };
+
+  if (!isOpen || !blog) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      onClick={handleOverlayClick}
+    >
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 py-4 border-b border-gray-200">
+          <div className="flex-1 pr-4">
+            <h2 className="text-xl font-bold text-gray-800 leading-tight">{blog.title}</h2>
+            <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">
+                  {blog.user_name?.charAt(0)?.toUpperCase() || "U"}
+                </div>
+                <span className="font-medium text-gray-700">{blog.user_name}</span>
+              </div>
+              <span>·</span>
+              <span>{formatDate(blog.created_at)}</span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors mt-1"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+          {/* Tags */}
+          {blog.tags && blog.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {blog.tags.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200"
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Description */}
+          <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap leading-relaxed">
+            {blog.description}
+          </div>
+
+          {/* Votes */}
+          <div className="flex items-center gap-4 pt-2 border-t border-gray-100">
+            <button
+              onClick={() => handleVote(true)}
+              disabled={voting}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${blog.user_vote === "up"
+                ? "bg-green-100 text-green-700 border border-green-300"
+                : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-green-50 hover:text-green-600"
+                }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
+              {blog.up_vote}
+            </button>
+            <button
+              onClick={() => handleVote(false)}
+              disabled={voting}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${blog.user_vote === "down"
+                ? "bg-red-100 text-red-700 border border-red-300"
+                : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600"
+                }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+              {blog.down_vote}
+            </button>
+          </div>
+
+          {/* Comments Section */}
+          <div className="border-t border-gray-200 pt-5">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Comments</h3>
+
+            {/* Add Comment */}
+            <div className="flex gap-3 mb-5">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Write a comment..."
+                rows={2}
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              />
+              <button
+                onClick={handleAddComment}
+                disabled={submittingComment || !newComment.trim()}
+                className="self-end px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {submittingComment ? "..." : "Post"}
+              </button>
+            </div>
+
+            {/* Comment List */}
+            {loadingComments ? (
+              <div className="flex justify-center py-8">
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : comments.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-6">No comments yet. Be the first to comment!</p>
+            ) : (
+              <div className="space-y-4">
+                {comments.map((c) => (
+                  <div key={c.id} className="flex gap-3">
+                    <div className="w-8 h-8 shrink-0 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold">
+                      {c.user_name?.charAt(0)?.toUpperCase() || "U"}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium text-gray-800">{c.user_name}</span>
+                        <span className="text-xs text-gray-400">{timeAgo(c.created_at)}</span>
+                      </div>
+                      <p className="text-sm text-gray-600 leading-relaxed">{c.comment}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Comment Pagination */}
+            {commentTotalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-5">
+                <button
+                  onClick={() => setCommentPage((p) => Math.max(1, p - 1))}
+                  disabled={commentPage <= 1}
+                  className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <span className="text-xs text-gray-500">
+                  Page {commentPage} of {commentTotalPages}
+                </span>
+                <button
+                  onClick={() => setCommentPage((p) => Math.min(commentTotalPages, p + 1))}
+                  disabled={commentPage >= commentTotalPages}
+                  className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default BlogModel;

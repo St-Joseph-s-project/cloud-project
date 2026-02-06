@@ -29,7 +29,8 @@ export async function loginAuth(
 
         return res.status(200).json({
             success: true,
-            user: result.user
+          user: result.user,
+          token: result.token
         });
     } catch (error) {
         console.error("Error in login controller", error);

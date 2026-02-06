@@ -1,0 +1,285 @@
+Backend API Specification — Interview Experience (Blogs) Feature
+
+Database Tables
+================
+
+CREATE TABLE blogs (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    title VARCHAR(255),
+    description TEXT,
+    up_vote INT DEFAULT 0,
+    down_vote INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE vote_user_mapping (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    blog_id INT NOT NULL,
+    is_up_vote BOOLEAN DEFAULT FALSE,
+    is_down_vote BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (blog_id) REFERENCES blogs(id)
+);
+
+CREATE TABLE tags (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE blog_tags_mapping (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    blog_id INT NOT NULL,
+    tag_id INT NOT NULL,
+    FOREIGN KEY (blog_id) REFERENCES blogs(id),
+    FOREIGN KEY (tag_id) REFERENCES tags(id)
+);
+
+CREATE TABLE comments (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    blog_id INT NOT NULL,
+    comment TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (blog_id) REFERENCES blogs(id)
+);
+
+
+================================================================================
+1. GET /api/blogs — List blogs (paginated, filterable, sortable)
+================================================================================
+
+Query Parameters:
+  page     (number, default: 1)     — Page number
+  limit    (number, default: 6)     — Items per page
+  search   (string, optional)       — Search in title, description, user_name
+  tag_id   (number, optional)       — Filter by tag id
+  sort_by  (string, default: "latest") — One of: "latest", "oldest", "most_upvoted"
+
+Expected Response:
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "title": "My Google Interview",
+      "description": "Full text...",
+      "up_vote": 42,
+      "down_vote": 3,
+      "created_at": "2026-01-28T10:30:00Z",
+      "is_deleted": false,
+      "user_name": "Alice Johnson",
+      "tags": [
+        { "id": 1, "name": "Google" },
+        { "id": 7, "name": "SDE-2" }
+      ],
+      "user_vote": "up"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 6,
+    "total": 15,
+    "totalPages": 3
+  }
+}
+
+Notes:
+- Join with users table to get user_name
+- Join with blog_tags_mapping + tags to get the tags[] array
+- Join with vote_user_mapping for the current logged-in user to determine user_vote ("up", "down", or null)
+- Filter out is_deleted = true blogs
+- Search should match against title, description, and user_name (case-insensitive)
+
+
+================================================================================
+2. POST /api/blogs — Create a blog
+================================================================================
+
+Request Body:
+{
+  "title": "My Interview Experience",
+  "description": "Detailed description...",
+  "tags": [1, 3, 7]
+}
+
+Fields:
+  title       (string, required)
+  description (string, required)
+  tags        (number[], array of tag IDs, optional — can be empty)
+
+Expected Response:
+{
+  "success": true,
+  "data": {
+    "id": 16,
+    "user_id": 99,
+    "title": "My Interview Experience",
+    "description": "Detailed description...",
+    "up_vote": 0,
+    "down_vote": 0,
+    "created_at": "2026-02-06T10:00:00Z",
+    "is_deleted": false,
+    "user_name": "Current User",
+    "tags": [
+      { "id": 1, "name": "Google" },
+      { "id": 3, "name": "Microsoft" },
+      { "id": 7, "name": "SDE-2" }
+    ],
+    "user_vote": null
+  }
+}
+
+Notes:
+- user_id comes from the authenticated session/cookie (not sent in body)
+- Insert into blogs table, then insert rows into blog_tags_mapping for each tag id
+
+
+================================================================================
+3. POST /api/blogs/vote — Vote (upvote/downvote) on a blog
+================================================================================
+
+Request Body:
+{
+  "blog_id": 1,
+  "is_up_vote": true
+}
+
+Fields:
+  blog_id    (number, required)
+  is_up_vote (boolean, required) — true = upvote, false = downvote
+
+Expected Response:
+{
+  "success": true,
+  "data": {
+    "up_vote": 43,
+    "down_vote": 3,
+    "user_vote": "up"
+  }
+}
+
+Vote Toggle Logic:
+  Current user_vote | Action (is_up_vote) | Result
+  ------------------|---------------------|-------
+  null              | true                | up_vote++, user_vote = "up"
+  null              | false               | down_vote++, user_vote = "down"
+  "up"              | true                | up_vote--, user_vote = null (remove vote)
+  "up"              | false               | up_vote--, down_vote++, user_vote = "down"
+  "down"            | false               | down_vote--, user_vote = null (remove vote)
+  "down"            | true                | down_vote--, up_vote++, user_vote = "up"
+
+Notes:
+- user_id from session
+- Upsert into vote_user_mapping — check if a row exists for (user_id, blog_id), update or insert accordingly
+- Update the up_vote/down_vote counts in the blogs table
+- Return the updated counts + the user's current vote state
+
+
+================================================================================
+4. GET /api/blogs/:id/comments — Get comments for a blog (paginated)
+================================================================================
+
+Path Params:
+  id — blog id
+
+Query Parameters:
+  page  (number, default: 1) — Page number
+  limit (number, default: 5) — Comments per page
+
+Expected Response:
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "user_id": 2,
+      "blog_id": 1,
+      "comment": "Great writeup!",
+      "created_at": "2026-01-28T12:00:00Z",
+      "user_name": "Bob Smith"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 5,
+    "total": 7,
+    "totalPages": 2
+  }
+}
+
+Notes:
+- Join with users to get user_name
+- Sort by created_at descending (newest first)
+
+
+================================================================================
+5. POST /api/blogs/comments — Add a comment
+================================================================================
+
+Request Body:
+{
+  "blog_id": 1,
+  "comment": "Great experience, thanks for sharing!"
+}
+
+Fields:
+  blog_id (number, required)
+  comment (string, required)
+
+Expected Response:
+{
+  "success": true,
+  "data": {
+    "id": 30,
+    "user_id": 99,
+    "blog_id": 1,
+    "comment": "Great experience, thanks for sharing!",
+    "created_at": "2026-02-06T10:05:00Z",
+    "user_name": "Current User"
+  }
+}
+
+Notes:
+- user_id from session
+
+
+================================================================================
+6. GET /api/tags — Get all tags
+================================================================================
+
+No parameters.
+
+Expected Response:
+{
+  "success": true,
+  "data": [
+    { "id": 1, "name": "Google" },
+    { "id": 2, "name": "Amazon" },
+    { "id": 3, "name": "Microsoft" },
+    { "id": 4, "name": "Meta" },
+    { "id": 5, "name": "Apple" },
+    { "id": 6, "name": "SDE-1" },
+    { "id": 7, "name": "SDE-2" },
+    { "id": 8, "name": "Frontend" },
+    { "id": 9, "name": "Backend" },
+    { "id": 10, "name": "System Design" },
+    { "id": 11, "name": "DSA" },
+    { "id": 12, "name": "Behavioral" }
+  ]
+}
+
+
+================================================================================
+General Notes
+================================================================================
+
+- All endpoints use withCredentials: true (cookies) — get user_id from session on the backend
+- Base URL: http://localhost:3000/api
+- Error responses should follow: { "success": false, "message": "Error description" }
+- All timestamps should be ISO 8601 format (UTC)
