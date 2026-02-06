@@ -1,0 +1,111 @@
+import type { Request, Response, RequestHandler } from "express";
+import { blogService } from "./blog.service.ts";
+import { sendSuccess, sendError } from "../../../utils/response.ts";
+
+export const createBlog: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !user.id) {
+      return sendError(res, 401, "Unauthorized", "User ID not found in token");
+    }
+
+    const blog = await blogService.createBlog(req.body, user.id);
+    return sendSuccess(res, 201, blog, "Blog created successfully!");
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to create blog";
+    return sendError(res, 400, "Bad Request", errorMessage);
+  }
+};
+
+export const getBlogs: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 6;
+    const search = (req.query.search as string) || undefined;
+    const tag_id = req.query.tag_id ? Number(req.query.tag_id) : undefined;
+    const sort_by = (req.query.sort_by as "latest" | "oldest" | "most_upvoted") || "latest";
+    const user = (req as any).user;
+    const userId = user?.id;
+
+    const result = await blogService.getBlogs(page, limit, search, tag_id, sort_by, userId);
+    return sendSuccess(res, 200, result);
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch blogs";
+    return sendError(res, 500, "Internal Server Error", errorMessage);
+  }
+};
+
+export const getAllBlogs: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const result = await blogService.getBlogs(1, 1000, undefined, undefined, "latest");
+    return sendSuccess(res, 200, result);
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch blogs";
+    return sendError(res, 500, "Internal Server Error", errorMessage);
+  }
+};
+
+export const voteBlog: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !user.id) {
+      return sendError(res, 401, "Unauthorized", "User ID not found in token");
+    }
+
+    const { blog_id, is_up_vote } = req.body;
+
+    if (!blog_id || is_up_vote === undefined) {
+      return sendError(res, 400, "Bad Request", "blog_id and is_up_vote are required");
+    }
+
+    const result = await blogService.voteBlog(blog_id, user.id, is_up_vote);
+    return sendSuccess(res, 200, result);
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to vote on blog";
+    return sendError(res, 500, "Internal Server Error", errorMessage);
+  }
+};
+
+export const updateBlog: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const blog = await blogService.updateBlog(Number(req.params.id), req.body);
+    return sendSuccess(res, 200, blog, "Blog updated successfully");
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to update blog";
+    return sendError(res, 400, "Bad Request", errorMessage);
+  }
+};
+
+export const deleteBlog: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    await blogService.deleteBlog(Number(req.params.id));
+    return sendSuccess(res, 200, undefined, "Blog deleted successfully");
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to delete blog";
+    return sendError(res, 500, "Internal Server Error", errorMessage);
+  }
+};
