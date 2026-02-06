@@ -11,5 +11,3 @@ router.get("/:blog_id", getComments);
 router.post("/", authMiddleware, addComment);
 
 export default router;
-
-export default router;

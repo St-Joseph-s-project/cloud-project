@@ -7,6 +7,7 @@ import {
   deleteBlog,
   voteBlog,
 } from "./blog.controller.ts";
+import { getComments } from "../comments/comments.controller.ts";
 import { authMiddleware } from "../../auth/auth.middleware.ts";
 
 const router = Router();
@@ -14,6 +15,7 @@ const router = Router();
 // Public routes
 router.get("/", getBlogs);
 router.get("/getAllBlog", getAllBlogs);
+router.get("/:blog_id/comments", getComments);
 
 // Protected routes
 router.post("/", authMiddleware, createBlog);

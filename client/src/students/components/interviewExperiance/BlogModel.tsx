@@ -33,8 +33,8 @@ const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpda
           page,
           limit: COMMENTS_PER_PAGE,
         });
-        setComments(res.data || []);
-        setCommentTotalPages(res.pagination?.totalPages || 1);
+        setComments(res.data.data || []);
+        setCommentTotalPages(res.data.pagination?.totalPages || 1);
       } catch {
         console.error("Failed to load comments");
       } finally {
@@ -175,8 +175,8 @@ const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpda
               onClick={() => handleVote(true)}
               disabled={voting}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${blog.user_vote === "up"
-                  ? "bg-green-100 text-green-700 border border-green-300"
-                  : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-green-50 hover:text-green-600"
+                ? "bg-green-100 text-green-700 border border-green-300"
+                : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-green-50 hover:text-green-600"
                 }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,8 +188,8 @@ const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpda
               onClick={() => handleVote(false)}
               disabled={voting}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${blog.user_vote === "down"
-                  ? "bg-red-100 text-red-700 border border-red-300"
-                  : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600"
+                ? "bg-red-100 text-red-700 border border-red-300"
+                : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600"
                 }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

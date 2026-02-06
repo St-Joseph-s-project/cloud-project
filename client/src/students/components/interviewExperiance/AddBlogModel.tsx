@@ -16,6 +16,7 @@ const AddBlogModel: React.FC<AddBlogModelProps> = ({ isOpen, onClose, onBlogAdde
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [loadingTags, setLoadingTags] = useState(false);
+  const [tagSearch, setTagSearch] = useState("");
 
   useEffect(() => {
     if (isOpen) {
@@ -60,6 +61,7 @@ const AddBlogModel: React.FC<AddBlogModelProps> = ({ isOpen, onClose, onBlogAdde
       setTitle("");
       setDescription("");
       setSelectedTags([]);
+      setTagSearch("");
       onBlogAdded();
       onClose();
     } catch {
@@ -124,25 +126,34 @@ const AddBlogModel: React.FC<AddBlogModelProps> = ({ isOpen, onClose, onBlogAdde
             {/* Tags */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+              <input
+                type="text"
+                value={tagSearch}
+                onChange={(e) => setTagSearch(e.target.value)}
+                placeholder="Search tags..."
+                className="w-full px-3 py-2 mb-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
               {loadingTags ? (
                 <p className="text-sm text-gray-400">Loading tags...</p>
               ) : (
-                <div className="flex flex-wrap gap-2">
-                  {allTags.map((tag) => (
-                    <button
-                      key={tag.id}
-                      type="button"
-                      onClick={() => toggleTag(tag.id)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selectedTags.includes(tag.id)
+                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-1">
+                  {allTags
+                    .filter((tag) => tag.name.toLowerCase().includes(tagSearch.toLowerCase()))
+                    .map((tag) => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => toggleTag(tag.id)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selectedTags.includes(tag.id)
                           ? "bg-blue-600 text-white border-blue-600"
                           : "bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600"
-                        }`}
-                    >
-                      {tag.name}
-                    </button>
-                  ))}
-                  {allTags.length === 0 && (
-                    <p className="text-sm text-gray-400">No tags available</p>
+                          }`}
+                      >
+                        {tag.name}
+                      </button>
+                    ))}
+                  {allTags.filter((tag) => tag.name.toLowerCase().includes(tagSearch.toLowerCase())).length === 0 && (
+                    <p className="text-sm text-gray-400">{allTags.length === 0 ? "No tags available" : "No matching tags"}</p>
                   )}
                 </div>
               )}

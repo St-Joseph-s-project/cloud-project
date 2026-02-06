@@ -44,7 +44,7 @@ export class BlogService {
     }
 
     // Get user name
-    const user = await prisma.users.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { name: true },
     });
@@ -283,6 +283,15 @@ export class BlogService {
           new_is_up_vote = false;
           new_is_down_vote = false;
           downVoteChange = -1;
+        }
+      } else {
+        // No active vote (both false) - treat as new vote
+        if (is_up_vote) {
+          new_is_up_vote = true;
+          upVoteChange = 1;
+        } else {
+          new_is_down_vote = true;
+          downVoteChange = 1;
         }
       }
 

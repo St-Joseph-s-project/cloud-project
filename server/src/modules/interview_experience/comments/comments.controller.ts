@@ -8,11 +8,11 @@ export const addComment: RequestHandler = async (
 ) => {
   try {
     const user = (req as any).user;
-    if (!user || !user.id) {
+    if (!user || !user.userId) {
       return sendError(res, 401, "Unauthorized", "User ID not found in token");
     }
 
-    const comment = await commentService.addComment(req.body, user.id);
+    const comment = await commentService.addComment(req.body, user.userId);
     return sendSuccess(res, 201, comment, "Comment added successfully!");
   } catch (error: any) {
     const errorMessage =

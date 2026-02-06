@@ -1,5 +1,7 @@
+import "dotenv/config";
 import app from "./app.ts";
 import { connectDB } from "./config/database.ts";
+import logger from "./config/logger.ts";
 
 const PORT = process.env.PORT || 3000;
 
@@ -7,18 +9,18 @@ const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
   try {
-    console.log("Starting server...");
+    logger.info("Starting server...");
     await connectDB();
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      logger.info(`Server is running on port ${PORT}`);
     });
   } catch (error) {
-    console.error("Failed to start server:", error);
+    logger.error("Failed to start server:", error);
     process.exit(1);
   }
 };
 
 startServer().catch((error) => {
-  console.error("Uncaught error in startServer:", error);
+  logger.error("Uncaught error in startServer:", error);
   process.exit(1);
 });

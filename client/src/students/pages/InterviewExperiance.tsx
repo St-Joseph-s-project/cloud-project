@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import PageHeader from "../components/PageHeader";
 import AddBlogModel from "../components/interviewExperiance/AddBlogModel";
 import BlogModel from "../components/interviewExperiance/BlogModel";
 import type { BlogType, Tag } from "../../types/pages/interviewExperiance/apiTypes";
@@ -21,6 +20,8 @@ export default function InterviewExperiance() {
   const [sortBy, setSortBy] = useState<"latest" | "oldest" | "most_upvoted">("latest");
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+
+  const [tagSearch, setTagSearch] = useState("");
 
   // Modals
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -52,7 +53,7 @@ export default function InterviewExperiance() {
         tag_id: selectedTagId,
         sort_by: sortBy,
       });
-      setBlogs(res.data || []);
+      setBlogs(res.data.data);
       setTotalPages(res.pagination?.totalPages || 1);
     } catch {
       console.error("Failed to fetch blogs");
@@ -114,10 +115,6 @@ export default function InterviewExperiance() {
   return (
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-0 py-0">
-        <PageHeader
-          title="Interview Experiences"
-          description="Read and share interview experiences with the community"
-        />
 
         {/* Toolbar */}
         <div className="mb-6 space-y-4">
@@ -161,8 +158,8 @@ export default function InterviewExperiance() {
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium transition-colors ${showFilters || selectedTagId
-                  ? "bg-blue-50 text-blue-700 border-blue-300"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                ? "bg-blue-50 text-blue-700 border-blue-300"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                 }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,21 +202,30 @@ export default function InterviewExperiance() {
                   </button>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {allTags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    onClick={() => setSelectedTagId(selectedTagId === tag.id ? undefined : tag.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selectedTagId === tag.id
+              <input
+                type="text"
+                value={tagSearch}
+                onChange={(e) => setTagSearch(e.target.value)}
+                placeholder="Search tags..."
+                className="w-full px-3 py-2 mb-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-1">
+                {allTags
+                  .filter((tag) => tag.name.toLowerCase().includes(tagSearch.toLowerCase()))
+                  .map((tag) => (
+                    <button
+                      key={tag.id}
+                      onClick={() => setSelectedTagId(selectedTagId === tag.id ? undefined : tag.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selectedTagId === tag.id
                         ? "bg-blue-600 text-white border-blue-600"
                         : "bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600"
-                      }`}
-                  >
-                    {tag.name}
-                  </button>
-                ))}
-                {allTags.length === 0 && (
-                  <span className="text-sm text-gray-400">No tags available</span>
+                        }`}
+                    >
+                      {tag.name}
+                    </button>
+                  ))}
+                {allTags.filter((tag) => tag.name.toLowerCase().includes(tagSearch.toLowerCase())).length === 0 && (
+                  <span className="text-sm text-gray-400">{allTags.length === 0 ? "No tags available" : "No matching tags"}</span>
                 )}
               </div>
             </div>
@@ -246,7 +252,7 @@ export default function InterviewExperiance() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {blogs.map((blog) => (
+            {blogs?.map((blog) => (
               <div
                 key={blog.id}
                 onClick={() => openBlog(blog)}
@@ -332,8 +338,8 @@ export default function InterviewExperiance() {
                   key={p}
                   onClick={() => setPage(p as number)}
                   className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors ${page === p
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-600 bg-white border border-gray-300 hover:bg-gray-50"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 bg-white border border-gray-300 hover:bg-gray-50"
                     }`}
                 >
                   {p}

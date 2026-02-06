@@ -15,3 +15,17 @@ export const getAllTags: RequestHandler = async (
     return sendError(res, 500, "Internal Server Error", errorMessage);
   }
 };
+
+export const createTags: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const result = await tagService.createTags();
+    return sendSuccess(res, 201, result, `Created ${result.created.length} tags, ${result.existing.length} already existed`);
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to create tags";
+    return sendError(res, 400, "Bad Request", errorMessage);
+  }
+};

@@ -8,11 +8,12 @@ export const createBlog: RequestHandler = async (
 ) => {
   try {
     const user = (req as any).user;
-    if (!user || !user.id) {
+    
+    if (!user || !user.userId) {
       return sendError(res, 401, "Unauthorized", "User ID not found in token");
     }
 
-    const blog = await blogService.createBlog(req.body, user.id);
+    const blog = await blogService.createBlog(req.body, user.userId);
     return sendSuccess(res, 201, blog, "Blog created successfully!");
   } catch (error: any) {
     const errorMessage =
@@ -63,7 +64,7 @@ export const voteBlog: RequestHandler = async (
 ) => {
   try {
     const user = (req as any).user;
-    if (!user || !user.id) {
+    if (!user || !user.userId) {
       return sendError(res, 401, "Unauthorized", "User ID not found in token");
     }
 
@@ -73,7 +74,7 @@ export const voteBlog: RequestHandler = async (
       return sendError(res, 400, "Bad Request", "blog_id and is_up_vote are required");
     }
 
-    const result = await blogService.voteBlog(blog_id, user.id, is_up_vote);
+    const result = await blogService.voteBlog(blog_id, user.userId, is_up_vote);
     return sendSuccess(res, 200, result);
   } catch (error: any) {
     const errorMessage =

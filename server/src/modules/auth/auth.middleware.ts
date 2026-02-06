@@ -6,10 +6,11 @@ export const authMiddleware = (
     res: Response,
     next: NextFunction
 ) => {
+  
     // 1. Grab the token from the 'Authorization' header
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(" ")[1]; // Format: "Bearer TOKEN"
-
+    
     if (!token) {
         return res
             .status(401)
@@ -19,7 +20,6 @@ export const authMiddleware = (
     try {
         // 2. Verify the token using the utility function
         const verified = verifyToken(token);
-
         // 3. Attach user info to the request object so routes can use it
         (req as any).user = verified;
 

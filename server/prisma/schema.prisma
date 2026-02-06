@@ -261,39 +261,6 @@ model api_cache {
   @@index([platform_source, data_type])
 }
 
-model blog_tags_mapping {
-  id      Int   @id @default(autoincrement())
-  blog_id Int
-  tag_id  Int
-  blogs   blogs @relation(fields: [blog_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_blog_tag_blog")
-  tags    tags  @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_blog_tag_tag")
-}
-
-model blogs {
-  id                Int                 @id @default(autoincrement())
-  user_id           Int
-  title             String              @db.VarChar(255)
-  description       String?
-  up_vote           Int?                @default(0)
-  down_vote         Int?                @default(0)
-  created_at        DateTime?           @default(now()) @db.Timestamp(6)
-  is_deleted        Boolean?            @default(false)
-  blog_tags_mapping blog_tags_mapping[]
-  users             User                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_blogs_user")
-  comments          comments[]
-  vote_user_mapping vote_user_mapping[]
-}
-
-model comments {
-  id         Int       @id @default(autoincrement())
-  user_id    Int
-  blog_id    Int
-  comment    String
-  created_at DateTime? @default(now()) @db.Timestamp(6)
-  blogs      blogs     @relation(fields: [blog_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_blog")
-  users      User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_user")
-}
-
 model daily_challenges {
   id         Int      @id @default(autoincrement())
   problem_id Int
@@ -398,12 +365,6 @@ model store_items {
   user_purchases user_purchases[]
 }
 
-model tags {
-  id                Int                 @id @default(autoincrement())
-  name              String              @unique @db.VarChar(255)
-  blog_tags_mapping blog_tags_mapping[]
-}
-
 model user_bookmarks {
   id            Int       @id @default(autoincrement())
   user_id       Int
@@ -477,6 +438,45 @@ model user_purchases {
   users        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
+}
+
+model blog_tags_mapping {
+  id      Int   @id @default(autoincrement())
+  blog_id Int
+  tag_id  Int
+  blogs   blogs @relation(fields: [blog_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_blog_tag_blog")
+  tags    tags  @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_blog_tag_tag")
+}
+
+model blogs {
+  id                Int                 @id @default(autoincrement())
+  user_id           Int
+  title             String              @db.VarChar(255)
+  description       String?
+  up_vote           Int?                @default(0)
+  down_vote         Int?                @default(0)
+  created_at        DateTime?           @default(now()) @db.Timestamp(6)
+  is_deleted        Boolean?            @default(false)
+  blog_tags_mapping blog_tags_mapping[]
+  users             User                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_blogs_user")
+  comments          comments[]
+  vote_user_mapping vote_user_mapping[]
+}
+
+model comments {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  blog_id    Int
+  comment    String
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  blogs      blogs     @relation(fields: [blog_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_blog")
+  users      User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_user")
+}
+
+model tags {
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique @db.VarChar(255)
+  blog_tags_mapping blog_tags_mapping[]
 }
 
 model vote_user_mapping {
