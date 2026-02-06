@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../redux/store';
+import type { Problem, Sample } from '../../types';
 import SubmissionResult from '../components/SubmissionResult';
 
 const ProblemDescription: React.FC = () => {
@@ -10,7 +11,7 @@ const ProblemDescription: React.FC = () => {
     const location = useLocation();
 
     const problem = useSelector((state: RootState) =>
-        state.problems.items.find((p) => p.id === slug)
+        state.problems.items.find((p: Problem) => p.id === slug)
     );
 
     const [activeTab, setActiveTab] = useState<'description' | 'submissions'>('description');
@@ -81,7 +82,7 @@ const ProblemDescription: React.FC = () => {
 
     // Get problem index from mock data or just use items
     const problemIndex = useSelector((state: RootState) =>
-        state.problems.items.findIndex(p => p.id === slug) + 1
+        state.problems.items.findIndex((p: Problem) => p.id === slug) + 1
     );
 
     return (
@@ -168,7 +169,7 @@ const ProblemDescription: React.FC = () => {
                                 {/* Examples (Samples) */}
                                 {problem.samples && problem.samples.length > 0 && (
                                     <div className="space-y-3">
-                                        {problem.samples.map((sample, i) => (
+                                        {problem.samples.map((sample: Sample, i: number) => (
                                             <div key={i} className="space-y-2">
                                                 <div className="text-sm font-semibold text-text-main">Example {i + 1}:</div>
                                                 <div className="bg-bg-main p-3 rounded-lg border border-border-gray space-y-1.5 font-mono text-xs">

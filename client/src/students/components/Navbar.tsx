@@ -1,11 +1,11 @@
 import { NavLink, Link, useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import type { RootState } from '../store/store';
-import { toggleTheme } from '../store/uiSlice';
+import type { RootState } from '../../redux/store';
+import { toggleTheme } from '../../redux/slices/uiSlice';
 
 const Navbar: React.FC = () => {
     const { studentId } = useParams<{ studentId: string }>();
-    const userHandle = useSelector((state: RootState) => state.auth.userHandle);
+    const userHandle = useSelector((state: RootState) => state.auth.user?.username);
     const theme = useSelector((state: RootState) => state.ui.theme);
     const dispatch = useDispatch();
 
@@ -16,7 +16,7 @@ const Navbar: React.FC = () => {
             <div className="flex gap-1 flex-1">
                 <NavLink
                     to={`/student/${studentId}/dashboard`}
-                    className={({ isActive }) =>
+                    className={({ isActive }: { isActive: boolean }) =>
                         `px-4 py-2 rounded-md transition-colors text-sm font-medium ${isActive ? 'bg-primary-blue/10 text-text-main' : 'text-text-body hover:bg-bg-main hover:text-text-main'}`
                     }
                 >
@@ -24,7 +24,7 @@ const Navbar: React.FC = () => {
                 </NavLink>
                 <NavLink
                     to={`/student/${studentId}/submissions`}
-                    className={({ isActive }) =>
+                    className={({ isActive }: { isActive: boolean }) =>
                         `px-4 py-2 rounded-md transition-colors text-sm font-medium ${isActive ? 'bg-primary-blue/10 text-text-main' : 'text-text-body hover:bg-bg-main hover:text-text-main'}`
                     }
                 >
@@ -32,7 +32,7 @@ const Navbar: React.FC = () => {
                 </NavLink>
                 <NavLink
                     to={`/student/${studentId}/problems`}
-                    className={({ isActive }) =>
+                    className={({ isActive }: { isActive: boolean }) =>
                         `px-4 py-2 rounded-md transition-colors text-sm font-medium ${isActive ? 'bg-primary-blue/10 text-text-main' : 'text-text-body hover:bg-bg-main hover:text-text-main'}`
                     }
                 >
