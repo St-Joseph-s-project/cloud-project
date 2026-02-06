@@ -7,8 +7,7 @@ import {
     ArrowTrendingUpIcon,
     CheckCircleIcon,
     ClockIcon,
-    AcademicCapIcon,
-    ChevronRightIcon
+    AcademicCapIcon
 } from '@heroicons/react/24/outline';
 
 interface Student {
@@ -267,8 +266,8 @@ const StudentDataPage: React.FC = () => {
                                         {/* Rank */}
                                         <div className="col-span-2">
                                             <div className={`px-3 py-1 rounded-md text-sm font-medium ${student.rank <= 3 ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
-                                                    student.rank <= 10 ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-                                                        'bg-gray-50 text-gray-700 border border-gray-200'
+                                                student.rank <= 10 ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                                                    'bg-gray-50 text-gray-700 border border-gray-200'
                                                 }`}>
                                                 #{student.rank}
                                             </div>
