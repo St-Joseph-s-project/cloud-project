@@ -59,6 +59,10 @@ export interface BlogWithDetails {
   user_vote: "up" | "down" | null;
 }
 
+export interface BlogWithDetailsAdmin extends BlogWithDetails {
+  user_email: string;
+}
+
 export interface VoteResponse {
   up_vote: number;
   down_vote: number;

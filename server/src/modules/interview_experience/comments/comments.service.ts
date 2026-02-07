@@ -98,6 +98,27 @@ export class CommentService {
       },
     };
   }
+
+  /**
+   * Delete a comment (user can only delete their own)
+   */
+  async deleteComment(commentId: number, userId: number): Promise<void> {
+    const comment = await prisma.comments.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      throw new Error("Comment not found");
+    }
+
+    if (comment.user_id !== userId) {
+      throw new Error("You can only delete your own comments");
+    }
+
+    await prisma.comments.delete({
+      where: { id: commentId },
+    });
+  }
 }
 
 export const commentService = new CommentService();

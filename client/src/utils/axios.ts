@@ -138,11 +138,18 @@ export const adminBlogsAPI = {
     search_email?: string;
     sort_by?: "latest" | "oldest";
   }) => {
-    const response = await axiosInstance.get("/admin/blogs", { params });
+    const response = await axiosInstance.get("/interview-experience/admin/blogs", { params });
     return response;
   },
   delete: async (id: number) => {
-    const response = await axiosInstance.delete(`/admin/blogs/${id}`);
+    const response = await axiosInstance.delete(`/interview-experience/admin/blogs/${id}`);
+    return response.data;
+  },
+};
+
+export const adminCommentsAPI = {
+  delete: async (id: number) => {
+    const response = await axiosInstance.delete(`/interview-experience/admin/comments/${id}`);
     return response.data;
   },
 };
