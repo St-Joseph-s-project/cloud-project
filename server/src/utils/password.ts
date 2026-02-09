@@ -7,7 +7,7 @@
 export const hashPassword = async (password: string): Promise<string> => {
     // const saltRounds = 10;
     // return await bcrypt.hash(password, saltRounds);
-
+ 
     // TEMP: Return plain password (replace with bcrypt in production)
     return password;
 };
