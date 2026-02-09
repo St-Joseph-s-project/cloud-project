@@ -44,6 +44,33 @@ export const getBlogs: RequestHandler = async (
   }
 };
 
+export const getBlogById: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const blogId = Number(req.params.id);
+    const user = (req as any).user;
+    const userId = user?.userId;
+
+    if (!blogId || isNaN(blogId)) {
+      return sendError(res, 400, "Bad Request", "Valid blog ID is required");
+    }
+
+    const blog = await blogService.getBlogById(blogId, userId);
+    
+    if (!blog) {
+      return sendError(res, 404, "Not Found", "Blog not found");
+    }
+
+    return sendSuccess(res, 200, blog);
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch blog";
+    return sendError(res, 500, "Internal Server Error", errorMessage);
+  }
+};
+
 export const getAllBlogs: RequestHandler = async (
   req: Request,
   res: Response
@@ -102,11 +129,28 @@ export const deleteBlog: RequestHandler = async (
   res: Response
 ) => {
   try {
-    await blogService.deleteBlog(Number(req.params.id));
+    const user = (req as any).user;
+    if (!user || !user.userId) {
+      return sendError(res, 401, "Unauthorized", "User ID not found in token");
+    }
+
+    const blogId = Number(req.params.id);
+    if (!blogId || isNaN(blogId)) {
+      return sendError(res, 400, "Bad Request", "Valid blog ID is required");
+    }
+
+    await blogService.deleteBlog(blogId, user.userId);
     return sendSuccess(res, 200, undefined, "Blog deleted successfully");
   } catch (error: any) {
     const errorMessage =
       error instanceof Error ? error.message : "Failed to delete blog";
+
+    if (errorMessage.includes("not found")) {
+      return sendError(res, 404, "Not Found", errorMessage);
+    }
+    if (errorMessage.includes("only delete your own")) {
+      return sendError(res, 403, "Forbidden", errorMessage);
+    }
     return sendError(res, 500, "Internal Server Error", errorMessage);
   }
 };

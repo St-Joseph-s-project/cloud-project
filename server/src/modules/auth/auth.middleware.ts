@@ -6,7 +6,6 @@ export const authMiddleware = (
     res: Response,
     next: NextFunction
 ) => {
-  
     // 1. Grab the token from the 'Authorization' header
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(" ")[1]; // Format: "Bearer TOKEN"
@@ -16,6 +15,7 @@ export const authMiddleware = (
             .status(401)
             .json({ message: "Access Denied: No Token Provided" });
     }
+
 
     try {
         // 2. Verify the token using the utility function

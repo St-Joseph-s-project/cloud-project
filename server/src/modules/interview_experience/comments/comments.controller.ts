@@ -42,3 +42,34 @@ export const getComments: RequestHandler = async (
     return sendError(res, 500, "Internal Server Error", errorMessage);
   }
 };
+
+export const deleteComment: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !user.userId) {
+      return sendError(res, 401, "Unauthorized", "User ID not found in token");
+    }
+
+    const commentId = Number(req.params.id);
+    if (!commentId || isNaN(commentId)) {
+      return sendError(res, 400, "Bad Request", "Valid comment ID is required");
+    }
+
+    await commentService.deleteComment(commentId, user.userId);
+    return sendSuccess(res, 200, undefined, "Comment deleted successfully");
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to delete comment";
+    
+    if (errorMessage.includes("not found")) {
+      return sendError(res, 404, "Not Found", errorMessage);
+    }
+    if (errorMessage.includes("only delete your own")) {
+      return sendError(res, 403, "Forbidden", errorMessage);
+    }
+    return sendError(res, 500, "Internal Server Error", errorMessage);
+  }
+};

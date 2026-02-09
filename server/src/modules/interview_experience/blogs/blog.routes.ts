@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createBlog,
   getBlogs,
+  getBlogById,
   getAllBlogs,
   updateBlog,
   deleteBlog,
@@ -12,10 +13,11 @@ import { authMiddleware } from "../../auth/auth.middleware.ts";
 
 const router = Router();
 
-// Public routes
+// Public routes (order matters - more specific routes first)
 router.get("/", getBlogs);
 router.get("/getAllBlog", getAllBlogs);
 router.get("/:blog_id/comments", getComments);
+router.get("/:id", getBlogById);
 
 // Protected routes
 router.post("/", authMiddleware, createBlog);

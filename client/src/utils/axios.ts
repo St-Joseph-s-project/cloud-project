@@ -129,3 +129,27 @@ export const tagsAPI = {
     return response.data;
   },
 };
+
+// Admin APIs for Interview Experience
+export const adminBlogsAPI = {
+  getAll: async (params: {
+    page?: number;
+    limit?: number;
+    search_email?: string;
+    sort_by?: "latest" | "oldest";
+  }) => {
+    const response = await axiosInstance.get("/interview-experience/admin/blogs", { params });
+    return response;
+  },
+  delete: async (id: number) => {
+    const response = await axiosInstance.delete(`/interview-experience/admin/blogs/${id}`);
+    return response.data;
+  },
+};
+
+export const adminCommentsAPI = {
+  delete: async (id: number) => {
+    const response = await axiosInstance.delete(`/interview-experience/admin/comments/${id}`);
+    return response.data;
+  },
+};

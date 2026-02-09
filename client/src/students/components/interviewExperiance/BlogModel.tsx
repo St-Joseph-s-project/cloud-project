@@ -11,9 +11,12 @@ interface BlogModelProps {
   isOpen: boolean;
   onClose: () => void;
   onVoteUpdate: (blogId: number, upVote: number, downVote: number, userVote: "up" | "down" | null) => void;
+  onDelete?: (blogId: number) => void;
+  onDeleteComment?: (commentId: number) => Promise<void>;
+  isAdmin?: boolean;
 }
 
-const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpdate }) => {
+const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpdate, onDelete, onDeleteComment, isAdmin = false }) => {
   const [comments, setComments] = useState<CommentType[]>([]);
   const [commentPage, setCommentPage] = useState(1);
   const [commentTotalPages, setCommentTotalPages] = useState(1);
@@ -21,6 +24,8 @@ const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpda
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [voting, setVoting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
 
   const COMMENTS_PER_PAGE = 5;
 
@@ -89,6 +94,35 @@ const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpda
     }
   };
 
+  const handleDelete = async () => {
+    if (!blog || !onDelete || deleting) return;
+    if (!window.confirm("Are you sure you want to delete this blog?")) return;
+    setDeleting(true);
+    try {
+      await onDelete(blog.id);
+      onClose();
+    } catch {
+      toast.error("Failed to delete blog");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!onDeleteComment || deletingCommentId) return;
+    if (!window.confirm("Are you sure you want to delete this comment?")) return;
+    setDeletingCommentId(commentId);
+    try {
+      await onDeleteComment(commentId);
+      toast.success("Comment deleted");
+      fetchComments(commentPage);
+    } catch {
+      toast.error("Failed to delete comment");
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
+
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -138,14 +172,28 @@ const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpda
               <span>{formatDate(blog.created_at)}</span>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors mt-1"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2 mt-1">
+            {isAdmin && onDelete && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="p-1.5 rounded-md bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+                title="Delete blog"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1 rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Body */}
@@ -231,7 +279,7 @@ const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpda
             ) : (
               <div className="space-y-4">
                 {comments.map((c) => (
-                  <div key={c.id} className="flex gap-3">
+                  <div key={c.id} className="flex gap-3 group">
                     <div className="w-8 h-8 shrink-0 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold">
                       {c.user_name?.charAt(0)?.toUpperCase() || "U"}
                     </div>
@@ -239,6 +287,22 @@ const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpda
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-medium text-gray-800">{c.user_name}</span>
                         <span className="text-xs text-gray-400">{timeAgo(c.created_at)}</span>
+                        {isAdmin && onDeleteComment && (
+                          <button
+                            onClick={() => handleDeleteComment(c.id)}
+                            disabled={deletingCommentId === c.id}
+                            className="ml-auto opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all disabled:opacity-50"
+                            title="Delete comment"
+                          >
+                            {deletingCommentId === c.id ? (
+                              <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            )}
+                          </button>
+                        )}
                       </div>
                       <p className="text-sm text-gray-600 leading-relaxed">{c.comment}</p>
                     </div>

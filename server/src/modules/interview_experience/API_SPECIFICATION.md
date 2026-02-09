@@ -293,7 +293,38 @@ Content-Type: application/json
 
 ---
 
-### 6. GET /api/tags — Get all tags
+### 6. DELETE /api/blogs/comments/:id — Delete a comment
+
+**Description:** Delete a comment (user can only delete their own)
+
+**Method:** DELETE
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `id` (number, required) — Comment ID
+
+**Example Request:**
+```bash
+DELETE /api/blogs/comments/30
+Authorization: Bearer <token>
+```
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "message": "Comment deleted successfully"
+}
+```
+
+**Notes:**
+- User can only delete their own comments
+- Returns 403 if trying to delete another user's comment
+
+---
+
+### 7. GET /api/tags — Get all tags
 
 **Description:** Retrieve all available tags
 
@@ -328,6 +359,98 @@ GET /api/tags
   ]
 }
 ```
+
+---
+
+## Admin Endpoints
+
+### 8. GET /api/interview-experience/admin/blogs — List all blogs (Admin)
+
+**Description:** Retrieve all blogs with user email for admin management. Supports search by email.
+
+**Method:** GET
+
+**Authentication:** Required (Admin role only)
+
+**Query Parameters:**
+- `page` (number, default: 1) — Page number
+- `limit` (number, default: 10) — Items per page
+- `search_email` (string, optional) — Filter by user email (case-insensitive)
+- `sort_by` (string, default: "latest") — One of: "latest", "oldest"
+
+**Example Request:**
+```bash
+GET /api/interview-experience/admin/blogs?page=1&limit=10&search_email=john@example.com&sort_by=latest
+Authorization: Bearer <admin_token>
+```
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "title": "My Google Interview",
+      "description": "Full text...",
+      "up_vote": 42,
+      "down_vote": 3,
+      "created_at": "2026-01-28T10:30:00Z",
+      "is_deleted": false,
+      "user_name": "John Doe",
+      "user_email": "john@example.com",
+      "tags": [
+        { "id": 1, "name": "Google" },
+        { "id": 7, "name": "SDE-2" }
+      ],
+      "user_vote": null
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 50,
+    "totalPages": 5
+  }
+}
+```
+
+**Notes:**
+- Admin endpoint returns `user_email` field which is not available in regular user endpoint
+- Requires admin role (role_id: 1)
+
+---
+
+### 9. DELETE /api/interview-experience/admin/blogs/:id — Delete any blog (Admin)
+
+**Description:** Delete any blog regardless of ownership
+
+**Method:** DELETE
+
+**Authentication:** Required (Admin role only)
+
+**Path Parameters:**
+- `id` (number, required) — Blog ID
+
+**Example Request:**
+```bash
+DELETE /api/interview-experience/admin/blogs/5
+Authorization: Bearer <admin_token>
+```
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "message": "Blog deleted successfully"
+}
+```
+
+**Notes:**
+- Admin can delete any blog without ownership restrictions
+- Performs soft delete (sets is_deleted to true)
+- Requires admin role (role_id: 1)
 
 ---
 

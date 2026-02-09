@@ -56,3 +56,10 @@ export interface VotePayload {
   blog_id: number;
   is_up_vote: boolean;
 }
+
+// Admin types
+export interface AdminBlogType extends BlogType {
+  user_email: string;
+}
+
+export interface GetAdminBlogsResponse extends PaginatedResponse<AdminBlogType> {}

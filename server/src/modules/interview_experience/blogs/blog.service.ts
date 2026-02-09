@@ -5,6 +5,7 @@ import type {
   BlogUpdateInput,
   Tag,
   BlogWithDetails,
+  BlogWithDetailsAdmin,
   VoteResponse,
   PaginatedResponse,
 } from "./blogs.model.ts";
@@ -183,14 +184,53 @@ export class BlogService {
   }
 
   /**
-   * Get blog by ID
+   * Get blog by ID with full details
    */
-  async getBlogById(id: number): Promise<Blog | null> {
+  async getBlogById(id: number, userId?: number): Promise<BlogWithDetails | null> {
     const blog = await prisma.blogs.findUnique({
-      where: { id },
+      where: { id, is_deleted: false },
+      include: {
+        users: { select: { name: true } },
+        blog_tags_mapping: { include: { tags: true } },
+        ...(userId && {
+          vote_user_mapping: {
+            where: { user_id: userId },
+            select: { is_up_vote: true, is_down_vote: true },
+          },
+        }),
+      },
     });
 
-    return blog as Blog | null;
+    if (!blog) {
+      return null;
+    }
+
+    let user_vote: "up" | "down" | null = null;
+    if (userId && blog.vote_user_mapping && (blog.vote_user_mapping as any).length > 0) {
+      const userVote = (blog.vote_user_mapping as any)[0];
+      if (userVote.is_up_vote) {
+        user_vote = "up";
+      } else if (userVote.is_down_vote) {
+        user_vote = "down";
+      }
+    }
+
+    return {
+      id: blog.id,
+      user_id: blog.user_id,
+      title: blog.title,
+      description: blog.description || undefined,
+      up_vote: blog.up_vote || 0,
+      down_vote: blog.down_vote || 0,
+      created_at: blog.created_at || undefined,
+      is_deleted: blog.is_deleted || false,
+      user_name: blog.users.name,
+      tags: (blog.blog_tags_mapping as any[]).map((mapping) => ({
+        id: mapping.tags.id,
+        name: mapping.tags.name,
+      })),
+      user_vote,
+    };
   }
 
   /**
@@ -212,9 +252,21 @@ export class BlogService {
   }
 
   /**
-   * Soft delete a blog
+   * Soft delete a blog (user can only delete their own)
    */
-  async deleteBlog(id: number): Promise<void> {
+  async deleteBlog(id: number, userId: number): Promise<void> {
+    const blog = await prisma.blogs.findUnique({
+      where: { id },
+    });
+
+    if (!blog) {
+      throw new Error("Blog not found");
+    }
+
+    if (blog.user_id !== userId) {
+      throw new Error("You can only delete your own blogs");
+    }
+
     await prisma.blogs.update({
       where: { id },
       data: {
@@ -326,6 +378,100 @@ export class BlogService {
       down_vote: blog.down_vote || 0,
       user_vote,
     };
+  }
+
+  /**
+   * Get all blogs for admin with email search capability
+   */
+  async getAdminBlogs(
+    page: number = 1,
+    limit: number = 10,
+    search_email?: string,
+    sort_by: "latest" | "oldest" = "latest"
+  ): Promise<PaginatedResponse<BlogWithDetailsAdmin>> {
+    const offset = (page - 1) * limit;
+
+    // Build where clause
+    let where: any = { is_deleted: false };
+
+    if (search_email) {
+      where = {
+        ...where,
+        users: {
+          email: { contains: search_email, mode: "insensitive" },
+        },
+      };
+    }
+
+    // Build order clause
+    const orderBy: any = sort_by === "oldest" 
+      ? { created_at: "asc" } 
+      : { created_at: "desc" };
+
+    // Get total count
+    const total = await prisma.blogs.count({ where });
+
+    // Get blogs with user details including email
+    const blogs = await prisma.blogs.findMany({
+      where,
+      orderBy,
+      skip: offset,
+      take: limit,
+      include: {
+        users: { select: { name: true, email: true } },
+        blog_tags_mapping: { include: { tags: true } },
+      },
+    });
+
+    // Map to admin response format
+    const data: BlogWithDetailsAdmin[] = blogs.map((blog) => ({
+      id: blog.id,
+      user_id: blog.user_id,
+      title: blog.title,
+      description: blog.description || undefined,
+      up_vote: blog.up_vote || 0,
+      down_vote: blog.down_vote || 0,
+      created_at: blog.created_at || undefined,
+      is_deleted: blog.is_deleted || false,
+      user_name: blog.users.name,
+      user_email: blog.users.email,
+      tags: (blog.blog_tags_mapping as any[]).map((mapping) => ({
+        id: mapping.tags.id,
+        name: mapping.tags.name,
+      })),
+      user_vote: null,
+    }));
+
+    return {
+      success: true,
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Admin delete blog - can delete any blog regardless of ownership
+   */
+  async adminDeleteBlog(id: number): Promise<void> {
+    const blog = await prisma.blogs.findUnique({
+      where: { id },
+    });
+
+    if (!blog) {
+      throw new Error("Blog not found");
+    }
+
+    await prisma.blogs.update({
+      where: { id },
+      data: {
+        is_deleted: true,
+      },
+    });
   }
 }
 

@@ -26,6 +26,7 @@ import TestQuestions from './students/pages/TestQuestions';
 import TestResults from './students/pages/TestResults';
 import StudentLeaderboard from './students/pages/Leaderboard';
 import InterviewExperiance from './students/pages/InterviewExperiance';
+import InterviewExperianceAdmin from './admin/pages/InterviewExperianceAdmin';
 
 const App: React.FC = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
@@ -49,6 +50,7 @@ const App: React.FC = () => {
         {/* Admin Routes (Role ID 1, 2 & 3) */}
         <Route element={<ProtectedRoute allowedRoles={[1, 2, 3]}><AdminLayout /></ProtectedRoute>}>
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="interview-experiance-admin" element={<InterviewExperianceAdmin />} />
           <Route path="problems" element={<ProblemsPage />} />
           <Route path="problems/create" element={<CreateProblemPage />} />
           <Route path="problems/:id" element={<ProblemForm />} />
