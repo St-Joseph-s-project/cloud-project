@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAdminBlogs, adminDeleteBlog } from "./admin.controller.ts";
+import { getAdminBlogs, adminDeleteBlog, adminDeleteComment, } from "./admin.controller.ts";
 import { authMiddleware } from "../../auth/auth.middleware.ts";
 import { adminMiddleware } from "./admin.middleware.ts";
 
@@ -14,5 +14,8 @@ router.get("/blogs", getAdminBlogs);
 
 // DELETE /interview-experience/admin/blogs/:id - Delete any blog
 router.delete("/blogs/:id", adminDeleteBlog);
+
+router.delete("/comments/:id", adminDeleteComment);
+
 
 export default router;
