@@ -9,7 +9,6 @@ export const authMiddleware = (
     // 1. Grab the token from the 'Authorization' header
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(" ")[1]; // Format: "Bearer TOKEN"
-    
     if (!token) {
         return res
             .status(401)
@@ -27,4 +26,24 @@ export const authMiddleware = (
     } catch (err) {
         res.status(403).json({ message: "Invalid or Expired Token" });
     }
+};
+
+export const optionalAuthMiddleware = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1]; // Format: "Bearer TOKEN"
+
+    if (token) {
+        try {
+            const verified = verifyToken(token);
+            (req as any).user = verified;
+        } catch (err) {
+            // Token invalid or expired, but we proceed without user info
+            // Could log error if needed
+        }
+    }
+    next();
 };

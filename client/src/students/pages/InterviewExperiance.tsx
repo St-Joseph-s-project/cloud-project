@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import AddBlogModel from "../components/interviewExperiance/AddBlogModel";
 import BlogModel from "../components/interviewExperiance/BlogModel";
 import type { BlogType, Tag } from "../../types/pages/interviewExperiance/apiTypes";
-import { blogsAPI, tagsAPI } from "../../utils/axios";
+import { blogsAPI, tagsAPI, reactionsAPI } from "../../utils/axios";
+import { AiOutlineLike, AiFillLike } from "react-icons/ai";
 
 const BLOGS_PER_PAGE = 6;
 
@@ -53,7 +54,30 @@ export default function InterviewExperiance() {
         tag_id: selectedTagId,
         sort_by: sortBy,
       });
-      setBlogs(res.data.data);
+      const fetched = res.data.data as BlogType[];
+      setBlogs(fetched);
+      // Enrich blogs with reaction counts (like) and user reacted state
+      try {
+        const enriched = await Promise.all(
+          fetched.map(async (b) => {
+            try {
+              const r = await reactionsAPI.getBlogReactions(b.id);
+              // r.data expected to be array of reactions
+              const likes = (r.data || []).find((x: any) => x.reaction_id === 1);
+              return {
+                ...b,
+                reactionCount: likes?.count || 0,
+                isUserReacted: !!likes?.user_reacted,
+              } as BlogType & { reactionCount?: number; isUserReacted?: boolean };
+            } catch {
+              return { ...b, reactionCount: 0, isUserReacted: false };
+            }
+          })
+        );
+        setBlogs(enriched as any);
+      } catch (err) {
+        // ignore reaction fetch errors
+      }
       setTotalPages(res.pagination?.totalPages || 1);
     } catch {
       console.error("Failed to fetch blogs");
@@ -88,6 +112,40 @@ export default function InterviewExperiance() {
     setViewModalOpen(true);
   };
 
+  // Reaction handler (Like = reaction_id 1)
+  const handleReaction = async (blogId: number) => {
+    const reactionId = 1;
+    const blog = blogs.find((b) => b.id === blogId);
+    if (!blog) return;
+
+    // Optimistic update
+    setBlogs((prev) =>
+      prev.map((b) =>
+        b.id === blogId
+          ? {
+            ...b,
+            isUserReacted: !((b as any).isUserReacted),
+            reactionCount: ((b as any).isUserReacted ? (b as any).reactionCount - 1 : (b as any).reactionCount + 1) || 0,
+          }
+          : b
+      )
+    );
+
+    try {
+      if ((blog as any).isUserReacted) {
+        await reactionsAPI.removeBlogReaction({ blog_id: blogId, reaction_id: reactionId });
+      } else {
+        await reactionsAPI.addBlogReaction({ blog_id: blogId, reaction_id: reactionId });
+      }
+    } catch (error) {
+      // rollback on error
+      setBlogs((prev) =>
+        prev.map((b) => (b.id === blogId ? { ...b, isUserReacted: (blog as any).isUserReacted, reactionCount: (blog as any).reactionCount } : b))
+      );
+      console.error("Failed to toggle reaction", error);
+    }
+  };
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-US", {
       year: "numeric",
@@ -110,6 +168,19 @@ export default function InterviewExperiance() {
       pages.push(totalPages);
     }
     return pages;
+  };
+
+  const handleVote = async (id: number, isUp: boolean) => {
+    try {
+      const res = await blogsAPI.vote({ blog_id: id, is_up_vote: isUp });
+      const updated = res.data;
+      setBlogs((prev) => prev.map((b) => (b.id === id ? { ...b, up_vote: updated.up_vote, down_vote: updated.down_vote, user_vote: updated.user_vote } : b)));
+      if (viewBlog && viewBlog.id === id) {
+        setViewBlog({ ...viewBlog, up_vote: updated.up_vote, down_vote: updated.down_vote, user_vote: updated.user_vote });
+      }
+    } catch (err) {
+      console.error("Failed to vote", err);
+    }
   };
 
   return (
@@ -255,8 +326,7 @@ export default function InterviewExperiance() {
             {blogs?.map((blog) => (
               <div
                 key={blog.id}
-                onClick={() => openBlog(blog)}
-                className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer group"
+                className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-gray-300 transition-all group"
               >
                 {/* Card header */}
                 <div className="flex items-center gap-2 mb-3">
@@ -298,20 +368,74 @@ export default function InterviewExperiance() {
                   </div>
                 )}
 
-                {/* Footer: votes */}
-                <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                {/* Footer: reactions & votes */}
+                <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                  {/* Like / Reaction button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReaction(blog.id);
+                    }}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${(blog as any).isUserReacted ? "bg-blue-100 text-blue-600" : "bg-gray-50 text-gray-600 hover:bg-blue-50"
+                      }`}
+                  >
+                    {(blog as any).isUserReacted ? (
+                      <AiFillLike className="w-4 h-4" />
+                    ) : (
+                      <AiOutlineLike className="w-4 h-4" />
+                    )}
+                    <span>{(blog as any).reactionCount || 0}</span>
+                  </button>
+
+                  {/* Upvote Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleVote(blog.id, true);
+                    }}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${blog.user_vote === "up"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                      }`}
+                  >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                     </svg>
                     <span>{blog.up_vote}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                  </button>
+
+                  {/* Downvote Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleVote(blog.id, false);
+                    }}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${blog.user_vote === "down"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-gray-50 text-gray-600 hover:bg-red-50"
+                      }`}
+                  >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                     <span>{blog.down_vote}</span>
-                  </div>
+                  </button>
+                </div>
+
+                {/* Comments button - opens popup for comments only */}
+                <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openBlog(blog);
+                    }}
+                    className="flex items-center gap-2 text-sm text-gray-600 px-3 py-1 rounded hover:bg-gray-50"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2H7l-4 4V6a2 2 0 012-2h2" />
+                    </svg>
+                    <span>Comments</span>
+                  </button>
                 </div>
               </div>
             ))}

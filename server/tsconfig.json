@@ -4,7 +4,7 @@
         "module": "NodeNext",
         "moduleResolution": "NodeNext",
         "outDir": "./dist",
-        "rootDir": "./src",
+        "rootDir": ".",
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
@@ -14,7 +14,9 @@
         "noEmit": true
     },
     "include": [
-        "src/**/*"
+        "src/**/*",
+        "seed_reactions.ts",
+        "check_reactions.ts"
     ],
     "exclude": [
         "node_modules"

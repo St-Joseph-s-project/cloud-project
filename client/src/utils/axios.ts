@@ -2,7 +2,9 @@ import axios from "axios";
 import type {
   AddBlogPayload,
   AddCommentPayload,
+  UpdateCommentPayload,
   VotePayload,
+  ReactionPayload,
 } from "../types/pages/interviewExperiance/apiTypes";
 
 export const BASE_URL = "http://localhost:3000/api";
@@ -94,8 +96,16 @@ export const blogsAPI = {
     const response = await axiosInstance.get(`/blogs/${id}`);
     return response.data;
   },
-  create: async (data: AddBlogPayload) => {
-    const response = await axiosInstance.post("/blogs", data);
+  create: async (data: AddBlogPayload | FormData) => {
+    const response = await axiosInstance.post("/blogs", data, {
+      headers: data instanceof FormData ? { "Content-Type": "multipart/form-data" } : {},
+    });
+    return response.data;
+  },
+  update: async (id: number, data: any | FormData) => {
+    const response = await axiosInstance.put(`/blogs/${id}`, data, {
+      headers: data instanceof FormData ? { "Content-Type": "multipart/form-data" } : {},
+    });
     return response.data;
   },
   delete: async (id: number) => {
@@ -117,8 +127,39 @@ export const commentsAPI = {
     const response = await axiosInstance.post("/blogs/comments", data);
     return response.data;
   },
+  update: async (id: number, data: UpdateCommentPayload) => {
+    const response = await axiosInstance.put(`/blogs/comments/${id}`, data);
+    return response.data;
+  },
   delete: async (id: number) => {
     const response = await axiosInstance.delete(`/blogs/comments/${id}`);
+    return response.data;
+  },
+};
+
+export const reactionsAPI = {
+  getBlogReactions: async (blogId: number) => {
+    const response = await axiosInstance.get(`/reactions/blog/${blogId}`);
+    return response.data;
+  },
+  addBlogReaction: async (data: ReactionPayload) => {
+    const response = await axiosInstance.post("/reactions/blog/add", data);
+    return response.data;
+  },
+  removeBlogReaction: async (data: ReactionPayload) => {
+    const response = await axiosInstance.post("/reactions/blog/remove", data);
+    return response.data;
+  },
+  getCommentReactions: async (commentId: number) => {
+    const response = await axiosInstance.get(`/reactions/comment/${commentId}`);
+    return response.data;
+  },
+  addCommentReaction: async (data: ReactionPayload) => {
+    const response = await axiosInstance.post("/reactions/comment/add", data);
+    return response.data;
+  },
+  removeCommentReaction: async (data: ReactionPayload) => {
+    const response = await axiosInstance.post("/reactions/comment/remove", data);
     return response.data;
   },
 };

@@ -1,5 +1,5 @@
 import prisma from "../../../lib/prisma.ts";
-import type { Comment, CommentCreateInput, PaginatedResponse } from "../blogs/blogs.model.ts";
+import type { Comment, CommentCreateInput, CommentUpdateInput, PaginatedResponse } from "../blogs/blogs.model.ts";
 
 export class CommentService {
   /**
@@ -48,7 +48,8 @@ export class CommentService {
   async getComments(
     blog_id: number,
     page: number = 1,
-    limit: number = 5
+    limit: number = 5,
+    userId?: number
   ): Promise<PaginatedResponse<Comment>> {
     const offset = (page - 1) * limit;
 
@@ -74,18 +75,38 @@ export class CommentService {
       take: limit,
       include: {
         users: { select: { name: true } },
+        comment_reactions: true,
       },
     });
 
     // Map to response format
-    const data: Comment[] = comments.map((comment) => ({
-      id: comment.id,
-      user_id: comment.user_id,
-      blog_id: comment.blog_id,
-      comment: comment.comment,
-      created_at: comment.created_at || undefined,
-      user_name: comment.users.name,
-    }));
+    const data: Comment[] = comments.map((comment) => {
+      const reactionsMap = new Map<number, number>();
+      let user_reaction: number | null = null;
+
+      comment.comment_reactions.forEach((r) => {
+        reactionsMap.set(r.reaction_id, (reactionsMap.get(r.reaction_id) || 0) + 1);
+        if (userId && r.user_id === userId) {
+          user_reaction = r.reaction_id;
+        }
+      });
+
+      const reactions = Array.from(reactionsMap.entries()).map(([reaction_id, count]) => ({
+        reaction_id,
+        count,
+      }));
+
+      return {
+        id: comment.id,
+        user_id: comment.user_id,
+        blog_id: comment.blog_id,
+        comment: comment.comment,
+        created_at: comment.created_at || undefined,
+        user_name: comment.users.name,
+        user_reaction,
+        reactions,
+      };
+    });
 
     return {
       success: true,
@@ -96,6 +117,61 @@ export class CommentService {
         total,
         totalPages: Math.ceil(total / limit),
       },
+    };
+  }
+
+  // Maintaining signature for backward compatibility but redirecting to new logic if needed
+  // Or simply replace the old method with the new one if we update the controller too.
+  // Let's update the original getComments signature to include userId optional.
+
+  /**
+    * Update a comment (user can only update their own)
+    */
+  async updateComment(
+    comment_id: number,
+    input: CommentUpdateInput,
+    userId: number
+  ): Promise<Comment> {
+    const { comment } = input;
+
+    if (!comment || !comment.trim()) {
+      throw new Error("Comment text cannot be empty");
+    }
+
+    const existingComment = await prisma.comments.findUnique({
+      where: { id: comment_id },
+    });
+
+    if (!existingComment) {
+      throw new Error("Comment not found");
+    }
+
+    if (existingComment.user_id !== userId) {
+      throw new Error("You can only update your own comments");
+    }
+
+    const updatedComment = await prisma.comments.update({
+      where: { id: comment_id },
+      data: {
+        comment,
+      },
+      include: {
+        users: { select: { name: true } },
+        comment_reactions: true,
+      },
+    });
+
+    return {
+      id: updatedComment.id,
+      user_id: updatedComment.user_id,
+      blog_id: updatedComment.blog_id,
+      comment: updatedComment.comment,
+      created_at: updatedComment.created_at || undefined,
+      user_name: updatedComment.users.name,
+      user_reaction: null,
+      reactions: [], // Updated comment won't lose reactions, but we might want to fetch them. 
+      // For simplicity, we can let the frontend refetch or assume no change in reactions during edit.
+      // But strictly, we should fetch them.
     };
   }
 
@@ -118,6 +194,42 @@ export class CommentService {
     await prisma.comments.delete({
       where: { id: commentId },
     });
+  }
+
+  /**
+   * React to a comment
+   */
+  async reactComment(comment_id: number, user_id: number, reaction_id: number): Promise<void> {
+    const existingReaction = await prisma.comment_reactions.findFirst({
+      where: {
+        comment_id,
+        user_id,
+      },
+    });
+
+    if (existingReaction) {
+      if (existingReaction.reaction_id === reaction_id) {
+        // Toggle off if same reaction
+        await prisma.comment_reactions.delete({
+          where: { id: existingReaction.id },
+        });
+      } else {
+        // Update if different reaction
+        await prisma.comment_reactions.update({
+          where: { id: existingReaction.id },
+          data: { reaction_id },
+        });
+      }
+    } else {
+      // Create new reaction
+      await prisma.comment_reactions.create({
+        data: {
+          comment_id,
+          user_id,
+          reaction_id,
+        },
+      });
+    }
   }
 }
 

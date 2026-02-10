@@ -9,16 +9,27 @@ export interface Blog {
   is_deleted: boolean;
 }
 
+export interface BlogFile {
+  id: number;
+  file_url: string;
+  file_name: string;
+  file_size?: number;
+  file_mime_type?: string;
+  created_at?: Date;
+}
+
 export interface BlogCreateInput {
   title: string;
   description?: string;
   tags?: number[];
+  files?: BlogFile[];
 }
 
 export interface BlogUpdateInput {
   title?: string;
   description?: string;
   is_deleted?: boolean;
+  files?: BlogFile[];
 }
 
 export interface Tag {
@@ -45,6 +56,16 @@ export interface UserVote {
   is_down_vote: boolean;
 }
 
+export interface Reaction {
+  id: number;
+  reaction: string;
+}
+
+export interface ReactionResponse {
+  reaction_id: number;
+  count: number;
+}
+
 export interface BlogWithDetails {
   id: number;
   user_id: number;
@@ -56,7 +77,10 @@ export interface BlogWithDetails {
   is_deleted: boolean;
   user_name: string;
   tags: Tag[];
+  files?: BlogFile[];
   user_vote: "up" | "down" | null;
+  user_reaction: number | null;
+  reactions: ReactionResponse[];
 }
 
 export interface BlogWithDetailsAdmin extends BlogWithDetails {
@@ -76,10 +100,16 @@ export interface Comment {
   comment: string;
   created_at?: Date;
   user_name: string;
+  user_reaction: number | null;
+  reactions: ReactionResponse[];
 }
 
 export interface CommentCreateInput {
   blog_id: number;
+  comment: string;
+}
+
+export interface CommentUpdateInput {
   comment: string;
 }
 

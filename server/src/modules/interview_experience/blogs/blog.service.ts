@@ -12,10 +12,10 @@ import type {
 
 export class BlogService {
   /**
-   * Create a new blog with tags
+   * Create a new blog with tags and files
    */
   async createBlog(input: BlogCreateInput, userId: number): Promise<BlogWithDetails> {
-    const { title, description, tags = [] } = input;
+    const { title, description, tags = [], files = [] } = input;
 
     if (!title) {
       throw new Error("Title is required");
@@ -44,6 +44,21 @@ export class BlogService {
       }
     }
 
+    // Add files if provided
+    if (files && files.length > 0) {
+      for (const file of files) {
+        await prisma.blog_files.create({
+          data: {
+            blog_id: blog.id,
+            file_url: file.file_url,
+            file_name: file.file_name,
+            file_size: file.file_size,
+            file_mime_type: file.file_mime_type,
+          },
+        });
+      }
+    }
+
     // Get user name
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -54,6 +69,11 @@ export class BlogService {
     const blogTags = await prisma.blog_tags_mapping.findMany({
       where: { blog_id: blog.id },
       include: { tags: true },
+    });
+
+    // Get files
+    const blogFiles = await prisma.blog_files.findMany({
+      where: { blog_id: blog.id },
     });
 
     return {
@@ -70,7 +90,17 @@ export class BlogService {
         id: mapping.tags.id,
         name: mapping.tags.name,
       })),
+      files: blogFiles.map((f) => ({
+        id: f.id,
+        file_url: f.file_url,
+        file_name: f.file_name,
+        file_size: f.file_size || undefined,
+        file_mime_type: f.file_mime_type || undefined,
+        created_at: f.created_at || undefined,
+      })),
       user_vote: null,
+      user_reaction: null,
+      reactions: [],
     };
   }
 
@@ -132,11 +162,18 @@ export class BlogService {
       include: {
         users: { select: { name: true } },
         blog_tags_mapping: { include: { tags: true } },
+        blog_files: true,
+        blog_reactions: true,
         ...(userId && {
           vote_user_mapping: {
             where: { user_id: userId },
             select: { is_up_vote: true, is_down_vote: true },
           },
+          // Optimization: fetch user specific reaction in a separate query or map later?
+          // Prisma doesn't support filtering inside include for has-many relation easily for "currentUserReaction"
+          // We will fetch all reactions and map, or use a separate query. 
+          // For list view, fetching all reactions for each blog might be heavy if not careful.
+          // But blog_reactions table is small per blog usually.
         }),
       },
     });
@@ -153,6 +190,22 @@ export class BlogService {
         }
       }
 
+      // Group reactions
+      const reactionsMap = new Map<number, number>();
+      let user_reaction: number | null = null;
+
+      blog.blog_reactions.forEach((r) => {
+        reactionsMap.set(r.reaction_id, (reactionsMap.get(r.reaction_id) || 0) + 1);
+        if (userId && r.user_id === userId) {
+          user_reaction = r.reaction_id;
+        }
+      });
+
+      const reactions = Array.from(reactionsMap.entries()).map(([reaction_id, count]) => ({
+        reaction_id,
+        count,
+      }));
+
       return {
         id: blog.id,
         user_id: blog.user_id,
@@ -167,7 +220,17 @@ export class BlogService {
           id: mapping.tags.id,
           name: mapping.tags.name,
         })),
+        files: blog.blog_files.map((f) => ({
+          id: f.id,
+          file_url: f.file_url,
+          file_name: f.file_name,
+          file_size: f.file_size || undefined,
+          file_mime_type: f.file_mime_type || undefined,
+          created_at: f.created_at || undefined,
+        })),
         user_vote,
+        user_reaction,
+        reactions,
       };
     });
 
@@ -192,6 +255,8 @@ export class BlogService {
       include: {
         users: { select: { name: true } },
         blog_tags_mapping: { include: { tags: true } },
+        blog_files: true,
+        blog_reactions: true,
         ...(userId && {
           vote_user_mapping: {
             where: { user_id: userId },
@@ -215,6 +280,22 @@ export class BlogService {
       }
     }
 
+    // Group reactions
+    const reactionsMap = new Map<number, number>();
+    let user_reaction: number | null = null;
+
+    blog.blog_reactions.forEach((r) => {
+      reactionsMap.set(r.reaction_id, (reactionsMap.get(r.reaction_id) || 0) + 1);
+      if (userId && r.user_id === userId) {
+        user_reaction = r.reaction_id;
+      }
+    });
+
+    const reactions = Array.from(reactionsMap.entries()).map(([reaction_id, count]) => ({
+      reaction_id,
+      count,
+    }));
+
     return {
       id: blog.id,
       user_id: blog.user_id,
@@ -229,17 +310,40 @@ export class BlogService {
         id: mapping.tags.id,
         name: mapping.tags.name,
       })),
+      files: blog.blog_files.map((f) => ({
+        id: f.id,
+        file_url: f.file_url,
+        file_name: f.file_name,
+        file_size: f.file_size || undefined,
+        file_mime_type: f.file_mime_type || undefined,
+        created_at: f.created_at || undefined,
+      })),
       user_vote,
+      user_reaction,
+      reactions,
     };
   }
 
   /**
-   * Update a blog
+   * Update a blog (user can only update their own)
    */
-  async updateBlog(id: number, input: BlogUpdateInput): Promise<Blog> {
-    const { title, description, is_deleted } = input;
+  async updateBlog(id: number, input: BlogUpdateInput, userId: number): Promise<Blog> {
+    const { title, description, is_deleted, files = [] } = input;
 
-    const blog = await prisma.blogs.update({
+    const blog = await prisma.blogs.findUnique({
+      where: { id },
+    });
+
+    if (!blog) {
+      throw new Error("Blog not found");
+    }
+
+    // Only allow owner to update (unless is_deleted is being set by admin, validation done in controller)
+    if (blog.user_id !== userId && is_deleted === undefined) {
+      throw new Error("You can only update your own blogs");
+    }
+
+    const updatedBlog = await prisma.blogs.update({
       where: { id },
       data: {
         ...(title && { title }),
@@ -248,7 +352,33 @@ export class BlogService {
       },
     });
 
-    return blog as Blog;
+    // Handle file updates if provided
+    if (files && files.length > 0) {
+      for (const file of files) {
+        await prisma.blog_files.upsert({
+          where: {
+            idx_blog_files_unique: {
+              blog_id: id,
+              file_url: file.file_url,
+            },
+          },
+          update: {
+            file_name: file.file_name,
+            file_size: file.file_size,
+            file_mime_type: file.file_mime_type,
+          },
+          create: {
+            blog_id: id,
+            file_url: file.file_url,
+            file_name: file.file_name,
+            file_size: file.file_size,
+            file_mime_type: file.file_mime_type,
+          },
+        });
+      }
+    }
+
+    return updatedBlog as Blog;
   }
 
   /**
@@ -299,7 +429,7 @@ export class BlogService {
         new_is_down_vote = true;
         downVoteChange = 1;
       }
-      
+
       await prisma.vote_user_mapping.create({
         data: {
           user_id,
@@ -381,6 +511,42 @@ export class BlogService {
   }
 
   /**
+   * React to a blog
+   */
+  async reactBlog(blog_id: number, user_id: number, reaction_id: number): Promise<void> {
+    const existingReaction = await prisma.blog_reactions.findFirst({
+      where: {
+        blog_id,
+        user_id,
+      },
+    });
+
+    if (existingReaction) {
+      if (existingReaction.reaction_id === reaction_id) {
+        // Toggle off if same reaction
+        await prisma.blog_reactions.delete({
+          where: { id: existingReaction.id },
+        });
+      } else {
+        // Update if different reaction
+        await prisma.blog_reactions.update({
+          where: { id: existingReaction.id },
+          data: { reaction_id },
+        });
+      }
+    } else {
+      // Create new reaction
+      await prisma.blog_reactions.create({
+        data: {
+          blog_id,
+          user_id,
+          reaction_id,
+        },
+      });
+    }
+  }
+
+  /**
    * Get all blogs for admin with email search capability
    */
   async getAdminBlogs(
@@ -404,8 +570,8 @@ export class BlogService {
     }
 
     // Build order clause
-    const orderBy: any = sort_by === "oldest" 
-      ? { created_at: "asc" } 
+    const orderBy: any = sort_by === "oldest"
+      ? { created_at: "asc" }
       : { created_at: "desc" };
 
     // Get total count
@@ -420,27 +586,51 @@ export class BlogService {
       include: {
         users: { select: { name: true, email: true } },
         blog_tags_mapping: { include: { tags: true } },
+        blog_files: true,
+        blog_reactions: true,
       },
     });
 
     // Map to admin response format
-    const data: BlogWithDetailsAdmin[] = blogs.map((blog) => ({
-      id: blog.id,
-      user_id: blog.user_id,
-      title: blog.title,
-      description: blog.description || undefined,
-      up_vote: blog.up_vote || 0,
-      down_vote: blog.down_vote || 0,
-      created_at: blog.created_at || undefined,
-      is_deleted: blog.is_deleted || false,
-      user_name: blog.users.name,
-      user_email: blog.users.email,
-      tags: (blog.blog_tags_mapping as any[]).map((mapping) => ({
-        id: mapping.tags.id,
-        name: mapping.tags.name,
-      })),
-      user_vote: null,
-    }));
+    const data: BlogWithDetailsAdmin[] = blogs.map((blog) => {
+      // Group reactions
+      const reactionsMap = new Map<number, number>();
+      blog.blog_reactions.forEach((r) => {
+        reactionsMap.set(r.reaction_id, (reactionsMap.get(r.reaction_id) || 0) + 1);
+      });
+      const reactions = Array.from(reactionsMap.entries()).map(([reaction_id, count]) => ({
+        reaction_id,
+        count,
+      }));
+
+      return {
+        id: blog.id,
+        user_id: blog.user_id,
+        title: blog.title,
+        description: blog.description || undefined,
+        up_vote: blog.up_vote || 0,
+        down_vote: blog.down_vote || 0,
+        created_at: blog.created_at || undefined,
+        is_deleted: blog.is_deleted || false,
+        user_name: blog.users.name,
+        user_email: blog.users.email,
+        tags: (blog.blog_tags_mapping as any[]).map((mapping) => ({
+          id: mapping.tags.id,
+          name: mapping.tags.name,
+        })),
+        files: blog.blog_files.map((f) => ({
+          id: f.id,
+          file_url: f.file_url,
+          file_name: f.file_name,
+          file_size: f.file_size || undefined,
+          file_mime_type: f.file_mime_type || undefined,
+          created_at: f.created_at || undefined,
+        })),
+        user_vote: null,
+        user_reaction: null,
+        reactions,
+      };
+    });
 
     return {
       success: true,

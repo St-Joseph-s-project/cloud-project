@@ -3,7 +3,8 @@ import type {
   BlogType,
   CommentType,
 } from "../../../types/pages/interviewExperiance/apiTypes";
-import { commentsAPI, blogsAPI } from "../../../utils/axios";
+import { commentsAPI, blogsAPI, reactionsAPI } from "../../../utils/axios";
+import { AiOutlineLike, AiFillLike } from "react-icons/ai";
 import toast from "react-hot-toast";
 
 interface BlogModelProps {
@@ -38,7 +39,20 @@ const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpda
           page,
           limit: COMMENTS_PER_PAGE,
         });
-        setComments(res.data.data || []);
+        const fetched = res.data.data || [];
+        // enrich comments with reaction counts
+        const enriched = await Promise.all(
+          fetched.map(async (c: any) => {
+            try {
+              const r = await reactionsAPI.getCommentReactions(c.id);
+              const likes = (r.data || []).find((x: any) => x.reaction_id === 1);
+              return { ...c, reactionCount: likes?.count || 0, isUserReacted: !!likes?.user_reacted };
+            } catch {
+              return { ...c, reactionCount: 0, isUserReacted: false };
+            }
+          })
+        );
+        setComments(enriched);
         setCommentTotalPages(res.data.pagination?.totalPages || 1);
       } catch {
         console.error("Failed to load comments");
@@ -120,6 +134,27 @@ const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpda
       toast.error("Failed to delete comment");
     } finally {
       setDeletingCommentId(null);
+    }
+  };
+
+  const handleCommentReaction = async (commentId: number) => {
+    const reactionId = 1;
+    const c = comments.find((x) => x.id === commentId) as any;
+    if (!c) return;
+
+    // optimistic
+    setComments((prev) => prev.map((x) => (x.id === commentId ? { ...x, isUserReacted: !x.isUserReacted, reactionCount: x.isUserReacted ? (x.reactionCount - 1) : (x.reactionCount + 1) } : x)));
+
+    try {
+      if (c.isUserReacted) {
+        await reactionsAPI.removeCommentReaction({ comment_id: commentId, reaction_id: reactionId });
+      } else {
+        await reactionsAPI.addCommentReaction({ comment_id: commentId, reaction_id: reactionId });
+      }
+    } catch (err) {
+      // rollback
+      setComments((prev) => prev.map((x) => (x.id === commentId ? { ...x, isUserReacted: c.isUserReacted, reactionCount: c.reactionCount } : x)));
+      console.error("Failed to toggle comment reaction", err);
     }
   };
 
@@ -217,35 +252,7 @@ const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpda
             {blog.description}
           </div>
 
-          {/* Votes */}
-          <div className="flex items-center gap-4 pt-2 border-t border-gray-100">
-            <button
-              onClick={() => handleVote(true)}
-              disabled={voting}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${blog.user_vote === "up"
-                ? "bg-green-100 text-green-700 border border-green-300"
-                : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-green-50 hover:text-green-600"
-                }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-              </svg>
-              {blog.up_vote}
-            </button>
-            <button
-              onClick={() => handleVote(false)}
-              disabled={voting}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${blog.user_vote === "down"
-                ? "bg-red-100 text-red-700 border border-red-300"
-                : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600"
-                }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-              {blog.down_vote}
-            </button>
-          </div>
+          {/* Votes removed from modal - voting is available on the card */}
 
           {/* Comments Section */}
           <div className="border-t border-gray-200 pt-5">
@@ -278,7 +285,7 @@ const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpda
               <p className="text-sm text-gray-400 text-center py-6">No comments yet. Be the first to comment!</p>
             ) : (
               <div className="space-y-4">
-                {comments.map((c) => (
+                {comments.map((c: any) => (
                   <div key={c.id} className="flex gap-3 group">
                     <div className="w-8 h-8 shrink-0 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold">
                       {c.user_name?.charAt(0)?.toUpperCase() || "U"}
@@ -305,6 +312,15 @@ const BlogModel: React.FC<BlogModelProps> = ({ blog, isOpen, onClose, onVoteUpda
                         )}
                       </div>
                       <p className="text-sm text-gray-600 leading-relaxed">{c.comment}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={() => handleCommentReaction(c.id)}
+                          className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${c.isUserReacted ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-600 hover:bg-blue-50"}`}
+                        >
+                          {c.isUserReacted ? <AiFillLike className="w-4 h-4" /> : <AiOutlineLike className="w-4 h-4" />}
+                          <span>{c.reactionCount || 0}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
