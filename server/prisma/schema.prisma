@@ -30,10 +30,13 @@ model User {
   last_solved_date                                   DateTime?
   streak                                             Int                            @default(0)
   action_logs                                        action_logs[]
+  blog_reactions                                     blog_reactions[]
   blogs                                              blogs[]
+  comment_reactions                                  comment_reactions[]
   comments                                           comments[]
   login_logs                                         login_logs[]
   modules                                            modules[]
+  placements                                         placements[]
   createdProblems                                    Problem[]                      @relation("ProblemCreator")
   student_profiles_student_profiles_mentor_idTousers student_profiles[]             @relation("student_profiles_mentor_idTousers")
   student_profiles_student_profiles_user_idTousers   student_profiles?              @relation("student_profiles_user_idTousers")
@@ -64,7 +67,7 @@ model Problem {
   created_by       Int
   is_published     Boolean?           @default(false)
   daily_challenges daily_challenges[]
-  creator          User               @relation("ProblemCreator", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  creator          User               @relation("ProblemCreator", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
   modules          modules?           @relation(fields: [module_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   submissions      submissions[]
   testProblems     TestProblem[]
@@ -86,7 +89,7 @@ model Test {
   testProblems  TestProblem[]
   batches       batches          @relation(fields: [batch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   colleges      colleges         @relation(fields: [college_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  creator       User             @relation("TestCreator", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  creator       User             @relation("TestCreator", fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([status], map: "idx_tests_status")
   @@map("tests")
@@ -109,7 +112,7 @@ model action_logs {
   target_type String?   @db.VarChar
   target_id   Int?
   created_at  DateTime? @default(now()) @db.Timestamp(6)
-  users       User      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users       User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model batches {
@@ -139,7 +142,7 @@ model login_logs {
   ip_address String?           @db.VarChar
   status     login_status_enum
   created_at DateTime?         @default(now()) @db.Timestamp(6)
-  users      User              @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      User              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model modules {
@@ -149,8 +152,8 @@ model modules {
   order_index   Int?
   is_leaf       Boolean?  @default(false)
   created_by    Int
-  users         User      @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  modules       modules?  @relation("modulesTomodules", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users         User      @relation(fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  modules       modules?  @relation("modulesTomodules", fields: [parent_id], references: [id], onUpdate: NoAction)
   other_modules modules[] @relation("modulesTomodules")
   problems      Problem[]
 }
@@ -186,7 +189,7 @@ model student_platform_profiles {
   atcoder          String?          @db.VarChar
   skillrack        String?          @db.VarChar
   codechef         String?          @db.VarChar
-  student_profiles student_profiles @relation(fields: [student_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  student_profiles student_profiles @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model student_profiles {
@@ -198,8 +201,8 @@ model student_profiles {
   student_platform_profiles               student_platform_profiles?
   batches                                 batches                    @relation(fields: [batch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   departments                             departments                @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users_student_profiles_mentor_idTousers User?                      @relation("student_profiles_mentor_idTousers", fields: [mentor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users_student_profiles_user_idTousers   User                       @relation("student_profiles_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_student_profiles_mentor_idTousers User?                      @relation("student_profiles_mentor_idTousers", fields: [mentor_id], references: [id], onUpdate: NoAction)
+  users_student_profiles_user_idTousers   User                       @relation("student_profiles_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model submissions {
@@ -215,9 +218,9 @@ model submissions {
   memory               Int?
   created_at           DateTime?              @default(now()) @db.Timestamp(6)
   programming_language programming_language   @relation(fields: [language_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  problems             Problem                @relation(fields: [problem_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  test_attempts        test_attempts?         @relation(fields: [test_attempt_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users                User                   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  problems             Problem                @relation(fields: [problem_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  test_attempts        test_attempts?         @relation(fields: [test_attempt_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                User                   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([problem_id], map: "idx_submissions_problem")
   @@index([user_id], map: "idx_submissions_user")
@@ -231,9 +234,11 @@ model test_attempts {
   end_time       DateTime?                @db.Timestamp(6)
   attempt_number Int?                     @default(1)
   status         test_attempt_status_enum
+  is_blocked     Boolean                  @default(false)
+  warning_count  Int                      @default(0)
   submissions    submissions[]
-  tests          Test                     @relation(fields: [test_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users          User                     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tests          Test                     @relation(fields: [test_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users          User                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([user_id], map: "idx_test_attempts_user")
 }
@@ -243,7 +248,7 @@ model testcases {
   problem_id Int
   input      String
   output     String
-  problems   Problem @relation(fields: [problem_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  problems   Problem @relation(fields: [problem_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model api_cache {
@@ -262,11 +267,12 @@ model api_cache {
 }
 
 model daily_challenges {
-  id         Int      @id @default(autoincrement())
-  problem_id Int
-  date       DateTime @unique @db.Date
-  created_at DateTime @default(now())
-  problems   Problem  @relation(fields: [problem_id], references: [id])
+  id           Int      @id @default(autoincrement())
+  problem_id   Int
+  date         DateTime @unique @db.Date
+  created_at   DateTime @default(now())
+  set_by_admin Boolean  @default(false)
+  problems     Problem  @relation(fields: [problem_id], references: [id], onDelete: Cascade)
 }
 
 model hackathons {
@@ -444,8 +450,8 @@ model blog_tags_mapping {
   id      Int   @id @default(autoincrement())
   blog_id Int
   tag_id  Int
-  blogs   blogs @relation(fields: [blog_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_blog_tag_blog")
-  tags    tags  @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_blog_tag_tag")
+  blogs   blogs @relation(fields: [blog_id], references: [id], onDelete: Cascade, map: "fk_blog_tag_blog")
+  tags    tags  @relation(fields: [tag_id], references: [id], onDelete: Cascade, map: "fk_blog_tag_tag")
 }
 
 model blogs {
@@ -457,20 +463,24 @@ model blogs {
   down_vote         Int?                @default(0)
   created_at        DateTime?           @default(now()) @db.Timestamp(6)
   is_deleted        Boolean?            @default(false)
+  blog_files        blog_files[]
+  blog_reactions    blog_reactions[]
   blog_tags_mapping blog_tags_mapping[]
-  users             User                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_blogs_user")
+  users             User                @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_blogs_user")
   comments          comments[]
   vote_user_mapping vote_user_mapping[]
 }
 
 model comments {
-  id         Int       @id @default(autoincrement())
-  user_id    Int
-  blog_id    Int
-  comment    String
-  created_at DateTime? @default(now()) @db.Timestamp(6)
-  blogs      blogs     @relation(fields: [blog_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_blog")
-  users      User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_user")
+  id                Int                 @id @default(autoincrement())
+  user_id           Int
+  blog_id           Int
+  comment           String
+  created_at        DateTime?           @default(now()) @db.Timestamp(6)
+  is_deleted        Boolean             @default(false)
+  comment_reactions comment_reactions[]
+  blogs             blogs               @relation(fields: [blog_id], references: [id], onDelete: Cascade, map: "fk_comment_blog")
+  users             User                @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_comment_user")
 }
 
 model tags {
@@ -485,8 +495,65 @@ model vote_user_mapping {
   blog_id      Int
   is_up_vote   Boolean? @default(false)
   is_down_vote Boolean? @default(false)
-  blogs        blogs    @relation(fields: [blog_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_vote_blog")
-  users        User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_vote_user")
+  blogs        blogs    @relation(fields: [blog_id], references: [id], onDelete: Cascade, map: "fk_vote_blog")
+  users        User     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_vote_user")
+}
+
+model blog_files {
+  id             Int       @id @default(autoincrement())
+  blog_id        Int
+  file_url       String
+  file_name      String    @db.VarChar(255)
+  file_size      Int?
+  file_mime_type String?   @db.VarChar(100)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  blogs          blogs     @relation(fields: [blog_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([blog_id, file_url], map: "idx_blog_files_unique")
+  @@index([blog_id], map: "idx_blog_files_blog_id")
+}
+
+model blog_reactions {
+  id          Int       @id @default(autoincrement())
+  blog_id     Int
+  reaction_id Int
+  user_id     Int
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  blogs       blogs     @relation(fields: [blog_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reactions   reactions @relation(fields: [reaction_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users       User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([blog_id], map: "idx_blog_reactions_blog")
+  @@index([user_id], map: "idx_reactions_user")
+}
+
+model comment_reactions {
+  id          Int       @id @default(autoincrement())
+  comment_id  Int
+  reaction_id Int
+  user_id     Int
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  comments    comments  @relation(fields: [comment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reactions   reactions @relation(fields: [reaction_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users       User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([comment_id], map: "idx_comment_reactions_comment")
+  @@index([user_id], map: "idx_reactions_user_comment")
+}
+
+model placements {
+  id              Int      @id @default(autoincrement())
+  user_id         Int
+  placement_group String   @db.VarChar(255)
+  created_at      DateTime @default(now())
+  users           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model reactions {
+  id                Int                 @id @default(autoincrement())
+  reaction          String              @db.VarChar(255)
+  blog_reactions    blog_reactions[]
+  comment_reactions comment_reactions[]
 }
 
 enum difficulty_enum {
