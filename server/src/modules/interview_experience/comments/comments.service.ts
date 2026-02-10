@@ -1,11 +1,19 @@
 import prisma from "../../../lib/prisma.ts";
-import type { Comment, CommentCreateInput, CommentUpdateInput, PaginatedResponse } from "../blogs/blogs.model.ts";
+import type {
+  Comment,
+  CommentCreateInput,
+  CommentUpdateInput,
+  PaginatedResponse,
+} from "../blogs/blogs.model.ts";
 
 export class CommentService {
   /**
    * Add a comment to a blog
    */
-  async addComment(input: CommentCreateInput, userId: number): Promise<Comment> {
+  async addComment(
+    input: CommentCreateInput,
+    userId: number,
+  ): Promise<Comment> {
     const { blog_id, comment } = input;
 
     if (!blog_id || !comment) {
@@ -49,7 +57,7 @@ export class CommentService {
     blog_id: number,
     page: number = 1,
     limit: number = 5,
-    userId?: number
+    userId?: number,
   ): Promise<PaginatedResponse<Comment>> {
     const offset = (page - 1) * limit;
 
@@ -85,16 +93,21 @@ export class CommentService {
       let user_reaction: number | null = null;
 
       comment.comment_reactions.forEach((r) => {
-        reactionsMap.set(r.reaction_id, (reactionsMap.get(r.reaction_id) || 0) + 1);
+        reactionsMap.set(
+          r.reaction_id,
+          (reactionsMap.get(r.reaction_id) || 0) + 1,
+        );
         if (userId && r.user_id === userId) {
           user_reaction = r.reaction_id;
         }
       });
 
-      const reactions = Array.from(reactionsMap.entries()).map(([reaction_id, count]) => ({
-        reaction_id,
-        count,
-      }));
+      const reactions = Array.from(reactionsMap.entries()).map(
+        ([reaction_id, count]) => ({
+          reaction_id,
+          count,
+        }),
+      );
 
       return {
         id: comment.id,
@@ -125,12 +138,12 @@ export class CommentService {
   // Let's update the original getComments signature to include userId optional.
 
   /**
-    * Update a comment (user can only update their own)
-    */
+   * Update a comment (user can only update their own)
+   */
   async updateComment(
     comment_id: number,
     input: CommentUpdateInput,
-    userId: number
+    userId: number,
   ): Promise<Comment> {
     const { comment } = input;
 
@@ -169,7 +182,7 @@ export class CommentService {
       created_at: updatedComment.created_at || undefined,
       user_name: updatedComment.users.name,
       user_reaction: null,
-      reactions: [], // Updated comment won't lose reactions, but we might want to fetch them. 
+      reactions: [], // Updated comment won't lose reactions, but we might want to fetch them.
       // For simplicity, we can let the frontend refetch or assume no change in reactions during edit.
       // But strictly, we should fetch them.
     };
@@ -199,7 +212,11 @@ export class CommentService {
   /**
    * React to a comment
    */
-  async reactComment(comment_id: number, user_id: number, reaction_id: number): Promise<void> {
+  async reactComment(
+    comment_id: number,
+    user_id: number,
+    reaction_id: number,
+  ): Promise<void> {
     const existingReaction = await prisma.comment_reactions.findFirst({
       where: {
         comment_id,

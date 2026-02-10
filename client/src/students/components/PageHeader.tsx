@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface PageHeaderProps {
   title: string;
@@ -11,18 +11,14 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   description,
   showStatus = true,
-  statusText = 'Learning in Progress'
+  statusText = "Learning in Progress",
 }) => {
   return (
     <div className="mb-6 md:mb-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            {title}
-          </h2>
-          <p className="text-sm text-gray-500">
-            {description}
-          </p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>
+          <p className="text-sm text-gray-500">{description}</p>
         </div>
         {showStatus && (
           <div className="hidden md:block">

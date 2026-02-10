@@ -82,18 +82,25 @@ export default function InterviewExperianceAdmin() {
     blogId: number,
     upVote: number,
     downVote: number,
-    userVote: "up" | "down" | null
+    userVote: "up" | "down" | null,
   ) => {
     setBlogs((prev) =>
       prev.map((b) =>
         b.id === blogId
           ? { ...b, up_vote: upVote, down_vote: downVote, user_vote: userVote }
-          : b
-      )
+          : b,
+      ),
     );
     if (selectedBlog && selectedBlog.id === blogId) {
       setSelectedBlog((prev) =>
-        prev ? { ...prev, up_vote: upVote, down_vote: downVote, user_vote: userVote } : null
+        prev
+          ? {
+              ...prev,
+              up_vote: upVote,
+              down_vote: downVote,
+              user_vote: userVote,
+            }
+          : null,
       );
     }
   };
@@ -126,7 +133,8 @@ export default function InterviewExperianceAdmin() {
           </p>
         </div>
         <div className="text-sm text-gray-500">
-          Total: <span className="font-semibold text-gray-700">{total}</span> blogs
+          Total: <span className="font-semibold text-gray-700">{total}</span>{" "}
+          blogs
         </div>
       </div>
 
@@ -191,7 +199,10 @@ export default function InterviewExperianceAdmin() {
                 </tr>
               ) : blogs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <td
+                    colSpan={6}
+                    className="px-6 py-12 text-center text-gray-500"
+                  >
                     No blogs found
                   </td>
                 </tr>
@@ -237,7 +248,11 @@ export default function InterviewExperianceAdmin() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (window.confirm("Are you sure you want to delete this blog?")) {
+                          if (
+                            window.confirm(
+                              "Are you sure you want to delete this blog?",
+                            )
+                          ) {
                             handleDelete(blog.id);
                           }
                         }}

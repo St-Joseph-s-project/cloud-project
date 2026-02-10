@@ -1,11 +1,11 @@
 import { Router } from "express";
 import {
-    handleProblemSubmission,
-    getAllProblems,
-    getProblemById,
-    updateProblem,
-    deleteProblem,
-    createProblemWithDetails
+  handleProblemSubmission,
+  getAllProblems,
+  getProblemById,
+  updateProblem,
+  deleteProblem,
+  createProblemWithDetails,
 } from "./problem.controller.ts";
 
 const router = Router();

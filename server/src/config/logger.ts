@@ -11,7 +11,7 @@ const logger = winston.createLogger({
   format: combine(
     timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
     errors({ stack: true }),
-    logFormat
+    logFormat,
   ),
   transports: [
     new winston.transports.Console({
@@ -33,7 +33,7 @@ if (process.env.NODE_ENV === "production") {
   logger.add(
     new winston.transports.Console({
       format: combine(timestamp(), logFormat),
-    })
+    }),
   );
 }
 

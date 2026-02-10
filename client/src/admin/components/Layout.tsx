@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../../hooks/store';
-import { logout } from '../../redux/slices/authSlice';
+import React, { useState } from "react";
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { useAppSelector, useAppDispatch } from "../../hooks/store";
+import { logout } from "../../redux/slices/authSlice";
 import {
   HomeIcon,
   ArrowRightOnRectangleIcon,
@@ -14,8 +14,8 @@ import {
   ChevronDownIcon,
   Bars3Icon,
   XMarkIcon,
-  BuildingLibraryIcon
-} from '@heroicons/react/24/outline';
+  BuildingLibraryIcon,
+} from "@heroicons/react/24/outline";
 
 type NavChild = {
   path: string;
@@ -31,25 +31,29 @@ type NavSection = {
 
 type NavItem = NavChild | NavSection;
 
-const isSection = (item: NavItem): item is NavSection => 'children' in item;
+const isSection = (item: NavItem): item is NavSection => "children" in item;
 
 const navItems: NavItem[] = [
-  { path: '/dashboard', label: 'Dashboard', icon: HomeIcon },
+  { path: "/dashboard", label: "Dashboard", icon: HomeIcon },
   {
-    label: 'Content Management',
+    label: "Content Management",
     icon: PuzzlePieceIcon,
     children: [
-      { path: '/problems', label: 'Problems', icon: PuzzlePieceIcon },
-      { path: '/interview-experiance-admin', label: 'Interview Experience', icon: BuildingLibraryIcon },
-    ]
+      { path: "/problems", label: "Problems", icon: PuzzlePieceIcon },
+      {
+        path: "/interview-experiance-admin",
+        label: "Interview Experience",
+        icon: BuildingLibraryIcon,
+      },
+    ],
   },
   {
-    label: 'User Management',
+    label: "User Management",
     icon: UsersIcon,
     children: [
-      { path: '/students', label: 'Student Data', icon: UsersIcon },
-      { path: '/leaderboard', label: 'Leaderboard', icon: TrophyIcon },
-    ]
+      { path: "/students", label: "Student Data", icon: UsersIcon },
+      { path: "/leaderboard", label: "Leaderboard", icon: TrophyIcon },
+    ],
   },
 ];
 
@@ -59,19 +63,20 @@ const Layout: React.FC = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
+    localStorage.removeItem("user");
     dispatch(logout());
-    navigate('/login');
+    navigate("/login");
   };
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [expandedSections, setExpandedSections] = useState<string[]>(['Content Management', 'User Management']);
+  const [expandedSections, setExpandedSections] = useState<string[]>([
+    "Content Management",
+    "User Management",
+  ]);
 
   const toggleSection = (label: string) => {
-    setExpandedSections(prev =>
-      prev.includes(label)
-        ? prev.filter(s => s !== label)
-        : [...prev, label]
+    setExpandedSections((prev) =>
+      prev.includes(label) ? prev.filter((s) => s !== label) : [...prev, label],
     );
   };
 
@@ -79,8 +84,9 @@ const Layout: React.FC = () => {
     <div className="flex h-screen bg-white overflow-hidden transition-all duration-300">
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden md:flex flex-col bg-white border-r border-blue-100 shadow-lg z-30 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-64' : 'w-20'
-          }`}
+        className={`hidden md:flex flex-col bg-white border-r border-blue-100 shadow-lg z-30 transition-all duration-300 ease-in-out ${
+          isSidebarOpen ? "w-64" : "w-20"
+        }`}
       >
         {/* Sidebar Header */}
         <div className="h-20 flex items-center justify-between px-4 border-b border-blue-50 bg-gradient-to-r from-blue-50 to-white">
@@ -119,16 +125,16 @@ const Layout: React.FC = () => {
                 <div className="mb-2">
                   <button
                     onClick={() => isSidebarOpen && toggleSection(item.label)}
-                    className={`flex items-center w-full ${isSidebarOpen ? 'px-3 py-3' : 'px-2 py-3 justify-center'} text-sm font-medium rounded-xl transition-all duration-200 text-gray-600 hover:bg-blue-50 hover:text-blue-700`}
+                    className={`flex items-center w-full ${isSidebarOpen ? "px-3 py-3" : "px-2 py-3 justify-center"} text-sm font-medium rounded-xl transition-all duration-200 text-gray-600 hover:bg-blue-50 hover:text-blue-700`}
                   >
-                    <div className={`${isSidebarOpen ? 'mr-3' : ''}`}>
+                    <div className={`${isSidebarOpen ? "mr-3" : ""}`}>
                       <item.icon className="h-5 w-5 text-blue-600" />
                     </div>
                     {isSidebarOpen && (
                       <>
                         <span className="flex-1 text-left">{item.label}</span>
                         <ChevronDownIcon
-                          className={`h-4 w-4 transition-transform duration-200 ${expandedSections.includes(item.label) ? 'rotate-180' : ''}`}
+                          className={`h-4 w-4 transition-transform duration-200 ${expandedSections.includes(item.label) ? "rotate-180" : ""}`}
                         />
                       </>
                     )}
@@ -141,15 +147,18 @@ const Layout: React.FC = () => {
                           key={child.path}
                           to={child.path}
                           className={({ isActive }) =>
-                            `flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${isActive
-                              ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                              : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                            `flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                              isActive
+                                ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                                : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                             }`
                           }
                         >
                           {({ isActive }) => (
                             <>
-                              <child.icon className={`mr-2 h-4 w-4 ${isActive ? 'text-white' : 'text-blue-500'}`} />
+                              <child.icon
+                                className={`mr-2 h-4 w-4 ${isActive ? "text-white" : "text-blue-500"}`}
+                              />
                               <span>{child.label}</span>
                             </>
                           )}
@@ -165,14 +174,17 @@ const Layout: React.FC = () => {
                           key={child.path}
                           to={child.path}
                           className={({ isActive }) =>
-                            `flex items-center px-2 py-2 justify-center text-sm font-medium rounded-lg transition-all duration-200 ${isActive
-                              ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                              : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700'
+                            `flex items-center px-2 py-2 justify-center text-sm font-medium rounded-lg transition-all duration-200 ${
+                              isActive
+                                ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                                : "text-gray-500 hover:bg-blue-50 hover:text-blue-700"
                             }`
                           }
                         >
                           {({ isActive }) => (
-                            <child.icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-blue-500'}`} />
+                            <child.icon
+                              className={`h-4 w-4 ${isActive ? "text-white" : "text-blue-500"}`}
+                            />
                           )}
                         </NavLink>
                       ))}
@@ -181,20 +193,25 @@ const Layout: React.FC = () => {
                 </div>
               ) : (
                 // Regular nav item
-                <div className={`${isSidebarOpen ? 'px-0' : 'px-0'} ${index === 0 ? 'mb-2' : ''}`}>
+                <div
+                  className={`${isSidebarOpen ? "px-0" : "px-0"} ${index === 0 ? "mb-2" : ""}`}
+                >
                   <NavLink
                     to={item.path}
                     className={({ isActive }) =>
-                      `flex items-center ${isSidebarOpen ? 'px-3 py-3' : 'px-2 py-3 justify-center'} text-sm font-medium rounded-xl transition-all duration-200 group relative ${isActive
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                        : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                      `flex items-center ${isSidebarOpen ? "px-3 py-3" : "px-2 py-3 justify-center"} text-sm font-medium rounded-xl transition-all duration-200 group relative ${
+                        isActive
+                          ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                       }`
                     }
                   >
                     {({ isActive }) => (
                       <>
-                        <div className={`${isSidebarOpen ? 'mr-3' : ''}`}>
-                          <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-blue-600'}`} />
+                        <div className={`${isSidebarOpen ? "mr-3" : ""}`}>
+                          <item.icon
+                            className={`h-5 w-5 ${isActive ? "text-white" : "text-blue-600"}`}
+                          />
                         </div>
                         {isSidebarOpen && <span>{item.label}</span>}
                         {isActive && isSidebarOpen && (
@@ -211,10 +228,12 @@ const Layout: React.FC = () => {
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-blue-50 bg-gradient-to-t from-blue-50/50 to-transparent">
-          <div className={`flex items-center ${isSidebarOpen ? 'px-2 py-3' : 'justify-center py-3'} rounded-xl bg-blue-50 border border-blue-100`}>
+          <div
+            className={`flex items-center ${isSidebarOpen ? "px-2 py-3" : "justify-center py-3"} rounded-xl bg-blue-50 border border-blue-100`}
+          >
             <div className="flex-shrink-0">
               <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-md">
-                {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                {user?.username?.charAt(0)?.toUpperCase() || "U"}
               </div>
             </div>
             {isSidebarOpen && (
@@ -222,19 +241,19 @@ const Layout: React.FC = () => {
                 <p className="text-sm font-semibold text-gray-800 truncate">
                   {user?.username}
                 </p>
-                <p className="text-xs text-blue-600 truncate">
-                  Administrator
-                </p>
+                <p className="text-xs text-blue-600 truncate">Administrator</p>
               </div>
             )}
           </div>
 
-          <div className={`mt-3 ${isSidebarOpen ? 'px-2' : 'px-1'}`}>
+          <div className={`mt-3 ${isSidebarOpen ? "px-2" : "px-1"}`}>
             <button
               onClick={handleLogout}
-              className={`flex items-center ${isSidebarOpen ? 'px-3 py-2.5' : 'px-2 py-2.5 justify-center'} text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 border border-red-100 w-full`}
+              className={`flex items-center ${isSidebarOpen ? "px-3 py-2.5" : "px-2 py-2.5 justify-center"} text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 border border-red-100 w-full`}
             >
-              <ArrowRightOnRectangleIcon className={`${isSidebarOpen ? 'mr-2' : ''} h-5 w-5`} />
+              <ArrowRightOnRectangleIcon
+                className={`${isSidebarOpen ? "mr-2" : ""} h-5 w-5`}
+              />
               {isSidebarOpen && <span>Logout</span>}
             </button>
           </div>
@@ -255,14 +274,19 @@ const Layout: React.FC = () => {
 
       {/* Mobile Sidebar Overlay */}
       <div
-        className={`md:hidden fixed inset-0 z-40 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
+        className={`md:hidden fixed inset-0 z-40 transition-opacity duration-300 ${
+          isSidebarOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
       >
         <div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300"
           onClick={() => setIsSidebarOpen(false)}
         />
-        <aside className={`relative w-80 h-full bg-white border-r border-blue-100 shadow-2xl flex flex-col transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <aside
+          className={`relative w-80 h-full bg-white border-r border-blue-100 shadow-2xl flex flex-col transform transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        >
           <div className="h-20 flex items-center justify-between px-6 border-b border-blue-50 bg-gradient-to-r from-blue-50 to-white">
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-blue-600 shadow-md">
@@ -299,7 +323,7 @@ const Layout: React.FC = () => {
                       <item.icon className="mr-3 h-5 w-5 text-blue-600" />
                       <span className="flex-1 text-left">{item.label}</span>
                       <ChevronDownIcon
-                        className={`h-4 w-4 transition-transform duration-200 ${expandedSections.includes(item.label) ? 'rotate-180' : ''}`}
+                        className={`h-4 w-4 transition-transform duration-200 ${expandedSections.includes(item.label) ? "rotate-180" : ""}`}
                       />
                     </button>
                     {expandedSections.includes(item.label) && (
@@ -310,15 +334,18 @@ const Layout: React.FC = () => {
                             to={child.path}
                             onClick={() => setIsSidebarOpen(false)}
                             className={({ isActive }) =>
-                              `flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${isActive
-                                ? 'bg-blue-600 text-white shadow-md'
-                                : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                              `flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                                isActive
+                                  ? "bg-blue-600 text-white shadow-md"
+                                  : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                               }`
                             }
                           >
                             {({ isActive }) => (
                               <>
-                                <child.icon className={`mr-2 h-4 w-4 ${isActive ? 'text-white' : 'text-blue-500'}`} />
+                                <child.icon
+                                  className={`mr-2 h-4 w-4 ${isActive ? "text-white" : "text-blue-500"}`}
+                                />
                                 <span>{child.label}</span>
                               </>
                             )}
@@ -333,15 +360,18 @@ const Layout: React.FC = () => {
                     to={item.path}
                     onClick={() => setIsSidebarOpen(false)}
                     className={({ isActive }) =>
-                      `flex items-center px-4 py-3.5 text-sm font-medium rounded-xl transition-all duration-200 my-1 ${isActive
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                      `flex items-center px-4 py-3.5 text-sm font-medium rounded-xl transition-all duration-200 my-1 ${
+                        isActive
+                          ? "bg-blue-600 text-white shadow-md"
+                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                       }`
                     }
                   >
                     {({ isActive }) => (
                       <>
-                        <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-white' : 'text-blue-600'}`} />
+                        <item.icon
+                          className={`mr-3 h-5 w-5 ${isActive ? "text-white" : "text-blue-600"}`}
+                        />
                         <span>{item.label}</span>
                       </>
                     )}
@@ -355,16 +385,14 @@ const Layout: React.FC = () => {
             <div className="flex items-center px-3 py-4 rounded-xl bg-blue-50 border border-blue-100 mb-3">
               <div className="flex-shrink-0">
                 <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-md">
-                  {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                  {user?.username?.charAt(0)?.toUpperCase() || "U"}
                 </div>
               </div>
               <div className="ml-3 flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-800 truncate">
                   {user?.username}
                 </p>
-                <p className="text-xs text-blue-600 truncate">
-                  Administrator
-                </p>
+                <p className="text-xs text-blue-600 truncate">Administrator</p>
               </div>
             </div>
 
@@ -397,12 +425,16 @@ const Layout: React.FC = () => {
                 className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
                 aria-label="Toggle sidebar"
               >
-                {isSidebarOpen ? <ChevronLeftIcon className="h-5 w-5" /> : <ChevronRightIcon className="h-5 w-5" />}
+                {isSidebarOpen ? (
+                  <ChevronLeftIcon className="h-5 w-5" />
+                ) : (
+                  <ChevronRightIcon className="h-5 w-5" />
+                )}
               </button>
             </div>
             <div className="flex flex-col">
               <h1 className="text-lg font-semibold text-gray-800 leading-none">
-                Welcome back, {user?.username || 'Admin'}
+                Welcome back, {user?.username || "Admin"}
               </h1>
               <p className="text-xs text-gray-500 mt-1">
                 CodePro Admin Dashboard
@@ -419,7 +451,7 @@ const Layout: React.FC = () => {
             </div>
             <div className="h-8 w-px bg-gray-200"></div>
             <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-gradient-to-tr from-blue-600 to-blue-500 text-white font-bold shadow-sm ring-2 ring-white">
-              {user?.username?.charAt(0)?.toUpperCase() || 'A'}
+              {user?.username?.charAt(0)?.toUpperCase() || "A"}
             </div>
           </div>
         </header>
@@ -433,7 +465,10 @@ const Layout: React.FC = () => {
             <footer className="mt-12 py-6 text-center border-t border-gray-100">
               <div className="text-sm text-gray-500">
                 <p className="font-medium">CodePro Admin Panel v2.0</p>
-                <p className="mt-1 text-xs opacity-75">© {new Date().getFullYear()} All rights reserved • Secure Admin Interface</p>
+                <p className="mt-1 text-xs opacity-75">
+                  © {new Date().getFullYear()} All rights reserved • Secure
+                  Admin Interface
+                </p>
               </div>
             </footer>
           </div>

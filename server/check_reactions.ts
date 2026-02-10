@@ -3,15 +3,15 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-    const reactions = await prisma.reactions.findMany();
-    console.log("Current reactions:", reactions);
+  const reactions = await prisma.reactions.findMany();
+  console.log("Current reactions:", reactions);
 }
 
 main()
-    .catch((e) => {
-        console.error(e);
-        process.exit(1);
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
-    });
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

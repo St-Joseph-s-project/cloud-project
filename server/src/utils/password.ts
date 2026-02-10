@@ -5,11 +5,11 @@
  * TODO: Uncomment bcrypt in production
  */
 export const hashPassword = async (password: string): Promise<string> => {
-    // const saltRounds = 10;
-    // return await bcrypt.hash(password, saltRounds);
- 
-    // TEMP: Return plain password (replace with bcrypt in production)
-    return password;
+  // const saltRounds = 10;
+  // return await bcrypt.hash(password, saltRounds);
+
+  // TEMP: Return plain password (replace with bcrypt in production)
+  return password;
 };
 
 /**
@@ -17,11 +17,11 @@ export const hashPassword = async (password: string): Promise<string> => {
  * TODO: Uncomment bcrypt in production
  */
 export const comparePassword = async (
-    password: string,
-    hashedPassword: string
+  password: string,
+  hashedPassword: string
 ): Promise<boolean> => {
-    // return await bcrypt.compare(password, hashedPassword);
+  // return await bcrypt.compare(password, hashedPassword);
 
-    // TEMP: Direct comparison (replace with bcrypt in production)
-    return password === hashedPassword;
+  // TEMP: Direct comparison (replace with bcrypt in production)
+  return password === hashedPassword;
 };

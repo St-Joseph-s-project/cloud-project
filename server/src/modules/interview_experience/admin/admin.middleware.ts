@@ -8,7 +8,7 @@ import { ROLE_IDS } from "../../../constants/roles.ts";
 export const adminMiddleware = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const user = (req as any).user;
 

@@ -1,6 +1,15 @@
 import { Router } from "express";
-import { addComment, getComments, updateComment, deleteComment, reactComment } from "./comments.controller.ts";
-import { authMiddleware, optionalAuthMiddleware } from "../../auth/auth.middleware.ts";
+import {
+  addComment,
+  getComments,
+  updateComment,
+  deleteComment,
+  reactComment,
+} from "./comments.controller.ts";
+import {
+  authMiddleware,
+  optionalAuthMiddleware,
+} from "../../auth/auth.middleware.ts";
 
 const router = Router();
 

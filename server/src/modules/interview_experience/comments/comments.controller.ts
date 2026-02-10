@@ -4,7 +4,7 @@ import { sendSuccess, sendError } from "../../../utils/response.ts";
 
 export const addComment: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const user = (req as any).user;
@@ -23,7 +23,7 @@ export const addComment: RequestHandler = async (
 
 export const getComments: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const blog_id = Number(req.params.blog_id);
@@ -37,7 +37,12 @@ export const getComments: RequestHandler = async (
     const user = (req as any).user;
     const userId = user?.userId;
 
-    const result = await commentService.getComments(blog_id, page, limit, userId);
+    const result = await commentService.getComments(
+      blog_id,
+      page,
+      limit,
+      userId,
+    );
     return sendSuccess(res, 200, result);
   } catch (error: any) {
     const errorMessage =
@@ -48,7 +53,7 @@ export const getComments: RequestHandler = async (
 
 export const updateComment: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const user = (req as any).user;
@@ -61,7 +66,11 @@ export const updateComment: RequestHandler = async (
       return sendError(res, 400, "Bad Request", "Valid comment ID is required");
     }
 
-    const comment = await commentService.updateComment(commentId, req.body, user.userId);
+    const comment = await commentService.updateComment(
+      commentId,
+      req.body,
+      user.userId,
+    );
     return sendSuccess(res, 200, comment, "Comment updated successfully");
   } catch (error: any) {
     const errorMessage =
@@ -79,7 +88,7 @@ export const updateComment: RequestHandler = async (
 
 export const deleteComment: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const user = (req as any).user;
@@ -110,7 +119,7 @@ export const deleteComment: RequestHandler = async (
 
 export const reactComment: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const user = (req as any).user;
@@ -121,7 +130,12 @@ export const reactComment: RequestHandler = async (
     const { comment_id, reaction_id } = req.body;
 
     if (!comment_id || !reaction_id) {
-      return sendError(res, 400, "Bad Request", "comment_id and reaction_id are required");
+      return sendError(
+        res,
+        400,
+        "Bad Request",
+        "comment_id and reaction_id are required",
+      );
     }
 
     await commentService.reactComment(comment_id, user.userId, reaction_id);

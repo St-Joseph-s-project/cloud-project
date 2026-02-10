@@ -21,7 +21,7 @@ export class ReactionService {
   async addBlogReaction(
     blog_id: number,
     user_id: number,
-    reaction_id: number
+    reaction_id: number,
   ): Promise<ReactionResponse> {
     // Check if reaction exists
     const reaction = await prisma.reactions.findUnique({
@@ -77,7 +77,7 @@ export class ReactionService {
   async removeBlogReaction(
     blog_id: number,
     user_id: number,
-    reaction_id: number
+    reaction_id: number,
   ): Promise<void> {
     const reaction = await prisma.blog_reactions.findFirst({
       where: {
@@ -101,7 +101,7 @@ export class ReactionService {
    */
   async getBlogReactions(
     blog_id: number,
-    user_id?: number
+    user_id?: number,
   ): Promise<ReactionCountResponse[]> {
     // Check if blog exists
     const blog = await prisma.blogs.findUnique({
@@ -152,7 +152,7 @@ export class ReactionService {
   async addCommentReaction(
     comment_id: number,
     user_id: number,
-    reaction_id: number
+    reaction_id: number,
   ): Promise<ReactionResponse> {
     // Check if reaction exists
     const reaction = await prisma.reactions.findUnique({
@@ -208,7 +208,7 @@ export class ReactionService {
   async removeCommentReaction(
     comment_id: number,
     user_id: number,
-    reaction_id: number
+    reaction_id: number,
   ): Promise<void> {
     const reaction = await prisma.comment_reactions.findFirst({
       where: {
@@ -232,7 +232,7 @@ export class ReactionService {
    */
   async getCommentReactions(
     comment_id: number,
-    user_id?: number
+    user_id?: number,
   ): Promise<ReactionCountResponse[]> {
     // Check if comment exists
     const comment = await prisma.comments.findUnique({

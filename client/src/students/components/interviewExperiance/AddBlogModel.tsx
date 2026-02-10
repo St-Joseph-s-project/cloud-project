@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
-import type { Tag, AddBlogPayload } from "../../../types/pages/interviewExperiance/apiTypes";
+import type {
+  Tag,
+  AddBlogPayload,
+  BlogType,
+} from "../../../types/pages/interviewExperiance/apiTypes";
 import { blogsAPI, tagsAPI } from "../../../utils/axios";
 import toast from "react-hot-toast";
 
@@ -7,9 +11,15 @@ interface AddBlogModelProps {
   isOpen: boolean;
   onClose: () => void;
   onBlogAdded: () => void;
+  initialData?: BlogType;
 }
 
-const AddBlogModel: React.FC<AddBlogModelProps> = ({ isOpen, onClose, onBlogAdded }) => {
+const AddBlogModel: React.FC<AddBlogModelProps> = ({
+  isOpen,
+  onClose,
+  onBlogAdded,
+  initialData,
+}) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [allTags, setAllTags] = useState<Tag[]>([]);
@@ -21,8 +31,18 @@ const AddBlogModel: React.FC<AddBlogModelProps> = ({ isOpen, onClose, onBlogAdde
   useEffect(() => {
     if (isOpen) {
       fetchTags();
+      if (initialData) {
+        setTitle(initialData.title);
+        setDescription(initialData.description);
+        setSelectedTags(initialData.tags.map((t) => t.id));
+      } else {
+        // Reset form for new blog
+        setTitle("");
+        setDescription("");
+        setSelectedTags([]);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialData]);
 
   const fetchTags = async () => {
     setLoadingTags(true);
@@ -38,7 +58,9 @@ const AddBlogModel: React.FC<AddBlogModelProps> = ({ isOpen, onClose, onBlogAdde
 
   const toggleTag = (tagId: number) => {
     setSelectedTags((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+      prev.includes(tagId)
+        ? prev.filter((id) => id !== tagId)
+        : [...prev, tagId],
     );
   };
 
@@ -56,8 +78,15 @@ const AddBlogModel: React.FC<AddBlogModelProps> = ({ isOpen, onClose, onBlogAdde
         description: description.trim(),
         tags: selectedTags,
       };
-      await blogsAPI.create(payload);
-      toast.success("Blog posted successfully!");
+
+      if (initialData) {
+        await blogsAPI.update(initialData.id, payload);
+        toast.success("Blog updated successfully!");
+      } else {
+        await blogsAPI.create(payload);
+        toast.success("Blog posted successfully!");
+      }
+
       setTitle("");
       setDescription("");
       setSelectedTags([]);
@@ -65,7 +94,9 @@ const AddBlogModel: React.FC<AddBlogModelProps> = ({ isOpen, onClose, onBlogAdde
       onBlogAdded();
       onClose();
     } catch {
-      toast.error("Failed to post blog");
+      toast.error(
+        initialData ? "Failed to update blog" : "Failed to post blog",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -85,23 +116,42 @@ const AddBlogModel: React.FC<AddBlogModelProps> = ({ isOpen, onClose, onBlogAdde
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">Share Your Interview Experience</h2>
+          <h2 className="text-xl font-bold text-gray-800">
+            {initialData
+              ? "Edit Interview Experience"
+              : "Share Your Interview Experience"}
+          </h2>
           <button
             onClick={onClose}
             className="p-1 rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 overflow-hidden"
+        >
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Title
+              </label>
               <input
                 type="text"
                 value={title}
@@ -113,7 +163,9 @@ const AddBlogModel: React.FC<AddBlogModelProps> = ({ isOpen, onClose, onBlogAdde
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -125,7 +177,9 @@ const AddBlogModel: React.FC<AddBlogModelProps> = ({ isOpen, onClose, onBlogAdde
 
             {/* Tags */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tags
+              </label>
               <input
                 type="text"
                 value={tagSearch}
@@ -138,22 +192,31 @@ const AddBlogModel: React.FC<AddBlogModelProps> = ({ isOpen, onClose, onBlogAdde
               ) : (
                 <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-1">
                   {allTags
-                    .filter((tag) => tag.name.toLowerCase().includes(tagSearch.toLowerCase()))
+                    .filter((tag) =>
+                      tag.name.toLowerCase().includes(tagSearch.toLowerCase()),
+                    )
                     .map((tag) => (
                       <button
                         key={tag.id}
                         type="button"
                         onClick={() => toggleTag(tag.id)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selectedTags.includes(tag.id)
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600"
-                          }`}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                          selectedTags.includes(tag.id)
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600"
+                        }`}
                       >
                         {tag.name}
                       </button>
                     ))}
-                  {allTags.filter((tag) => tag.name.toLowerCase().includes(tagSearch.toLowerCase())).length === 0 && (
-                    <p className="text-sm text-gray-400">{allTags.length === 0 ? "No tags available" : "No matching tags"}</p>
+                  {allTags.filter((tag) =>
+                    tag.name.toLowerCase().includes(tagSearch.toLowerCase()),
+                  ).length === 0 && (
+                    <p className="text-sm text-gray-400">
+                      {allTags.length === 0
+                        ? "No tags available"
+                        : "No matching tags"}
+                    </p>
                   )}
                 </div>
               )}
@@ -174,7 +237,11 @@ const AddBlogModel: React.FC<AddBlogModelProps> = ({ isOpen, onClose, onBlogAdde
               disabled={submitting}
               className="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {submitting ? "Posting..." : "Post Blog"}
+              {submitting
+                ? "Saving..."
+                : initialData
+                  ? "Update Blog"
+                  : "Post Blog"}
             </button>
           </div>
         </form>

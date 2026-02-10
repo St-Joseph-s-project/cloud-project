@@ -7,7 +7,10 @@ import {
   removeCommentReaction,
   getCommentReactions,
 } from "./reactions.controller.ts";
-import { authMiddleware, optionalAuthMiddleware } from "../../auth/auth.middleware.ts";
+import {
+  authMiddleware,
+  optionalAuthMiddleware,
+} from "../../auth/auth.middleware.ts";
 
 const router = Router();
 

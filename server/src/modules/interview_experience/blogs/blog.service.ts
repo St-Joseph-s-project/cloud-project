@@ -14,7 +14,10 @@ export class BlogService {
   /**
    * Create a new blog with tags and files
    */
-  async createBlog(input: BlogCreateInput, userId: number): Promise<BlogWithDetails> {
+  async createBlog(
+    input: BlogCreateInput,
+    userId: number,
+  ): Promise<BlogWithDetails> {
     const { title, description, tags = [], files = [] } = input;
 
     if (!title) {
@@ -113,7 +116,7 @@ export class BlogService {
     search?: string,
     tag_id?: number,
     sort_by: "latest" | "oldest" | "most_upvoted" = "latest",
-    userId?: number
+    userId?: number,
   ): Promise<PaginatedResponse<BlogWithDetails>> {
     const offset = (page - 1) * limit;
 
@@ -171,7 +174,7 @@ export class BlogService {
           },
           // Optimization: fetch user specific reaction in a separate query or map later?
           // Prisma doesn't support filtering inside include for has-many relation easily for "currentUserReaction"
-          // We will fetch all reactions and map, or use a separate query. 
+          // We will fetch all reactions and map, or use a separate query.
           // For list view, fetching all reactions for each blog might be heavy if not careful.
           // But blog_reactions table is small per blog usually.
         }),
@@ -181,7 +184,11 @@ export class BlogService {
     // Map to response format
     const data: BlogWithDetails[] = blogs.map((blog) => {
       let user_vote: "up" | "down" | null = null;
-      if (userId && blog.vote_user_mapping && (blog.vote_user_mapping as any).length > 0) {
+      if (
+        userId &&
+        blog.vote_user_mapping &&
+        (blog.vote_user_mapping as any).length > 0
+      ) {
         const userVote = (blog.vote_user_mapping as any)[0];
         if (userVote.is_up_vote) {
           user_vote = "up";
@@ -195,16 +202,21 @@ export class BlogService {
       let user_reaction: number | null = null;
 
       blog.blog_reactions.forEach((r) => {
-        reactionsMap.set(r.reaction_id, (reactionsMap.get(r.reaction_id) || 0) + 1);
+        reactionsMap.set(
+          r.reaction_id,
+          (reactionsMap.get(r.reaction_id) || 0) + 1,
+        );
         if (userId && r.user_id === userId) {
           user_reaction = r.reaction_id;
         }
       });
 
-      const reactions = Array.from(reactionsMap.entries()).map(([reaction_id, count]) => ({
-        reaction_id,
-        count,
-      }));
+      const reactions = Array.from(reactionsMap.entries()).map(
+        ([reaction_id, count]) => ({
+          reaction_id,
+          count,
+        }),
+      );
 
       return {
         id: blog.id,
@@ -249,7 +261,10 @@ export class BlogService {
   /**
    * Get blog by ID with full details
    */
-  async getBlogById(id: number, userId?: number): Promise<BlogWithDetails | null> {
+  async getBlogById(
+    id: number,
+    userId?: number,
+  ): Promise<BlogWithDetails | null> {
     const blog = await prisma.blogs.findUnique({
       where: { id, is_deleted: false },
       include: {
@@ -271,7 +286,11 @@ export class BlogService {
     }
 
     let user_vote: "up" | "down" | null = null;
-    if (userId && blog.vote_user_mapping && (blog.vote_user_mapping as any).length > 0) {
+    if (
+      userId &&
+      blog.vote_user_mapping &&
+      (blog.vote_user_mapping as any).length > 0
+    ) {
       const userVote = (blog.vote_user_mapping as any)[0];
       if (userVote.is_up_vote) {
         user_vote = "up";
@@ -285,16 +304,21 @@ export class BlogService {
     let user_reaction: number | null = null;
 
     blog.blog_reactions.forEach((r) => {
-      reactionsMap.set(r.reaction_id, (reactionsMap.get(r.reaction_id) || 0) + 1);
+      reactionsMap.set(
+        r.reaction_id,
+        (reactionsMap.get(r.reaction_id) || 0) + 1,
+      );
       if (userId && r.user_id === userId) {
         user_reaction = r.reaction_id;
       }
     });
 
-    const reactions = Array.from(reactionsMap.entries()).map(([reaction_id, count]) => ({
-      reaction_id,
-      count,
-    }));
+    const reactions = Array.from(reactionsMap.entries()).map(
+      ([reaction_id, count]) => ({
+        reaction_id,
+        count,
+      }),
+    );
 
     return {
       id: blog.id,
@@ -327,7 +351,11 @@ export class BlogService {
   /**
    * Update a blog (user can only update their own)
    */
-  async updateBlog(id: number, input: BlogUpdateInput, userId: number): Promise<Blog> {
+  async updateBlog(
+    id: number,
+    input: BlogUpdateInput,
+    userId: number,
+  ): Promise<Blog> {
     const { title, description, is_deleted, files = [] } = input;
 
     const blog = await prisma.blogs.findUnique({
@@ -409,7 +437,11 @@ export class BlogService {
    * Vote on a blog (upvote/downvote)
    * Implements toggle logic
    */
-  async voteBlog(blog_id: number, user_id: number, is_up_vote: boolean): Promise<VoteResponse> {
+  async voteBlog(
+    blog_id: number,
+    user_id: number,
+    is_up_vote: boolean,
+  ): Promise<VoteResponse> {
     // Get current vote
     const currentVote = await prisma.vote_user_mapping.findFirst({
       where: { user_id, blog_id },
@@ -513,7 +545,11 @@ export class BlogService {
   /**
    * React to a blog
    */
-  async reactBlog(blog_id: number, user_id: number, reaction_id: number): Promise<void> {
+  async reactBlog(
+    blog_id: number,
+    user_id: number,
+    reaction_id: number,
+  ): Promise<void> {
     const existingReaction = await prisma.blog_reactions.findFirst({
       where: {
         blog_id,
@@ -553,7 +589,7 @@ export class BlogService {
     page: number = 1,
     limit: number = 10,
     search_email?: string,
-    sort_by: "latest" | "oldest" = "latest"
+    sort_by: "latest" | "oldest" = "latest",
   ): Promise<PaginatedResponse<BlogWithDetailsAdmin>> {
     const offset = (page - 1) * limit;
 
@@ -570,9 +606,8 @@ export class BlogService {
     }
 
     // Build order clause
-    const orderBy: any = sort_by === "oldest"
-      ? { created_at: "asc" }
-      : { created_at: "desc" };
+    const orderBy: any =
+      sort_by === "oldest" ? { created_at: "asc" } : { created_at: "desc" };
 
     // Get total count
     const total = await prisma.blogs.count({ where });
@@ -596,12 +631,17 @@ export class BlogService {
       // Group reactions
       const reactionsMap = new Map<number, number>();
       blog.blog_reactions.forEach((r) => {
-        reactionsMap.set(r.reaction_id, (reactionsMap.get(r.reaction_id) || 0) + 1);
+        reactionsMap.set(
+          r.reaction_id,
+          (reactionsMap.get(r.reaction_id) || 0) + 1,
+        );
       });
-      const reactions = Array.from(reactionsMap.entries()).map(([reaction_id, count]) => ({
-        reaction_id,
-        count,
-      }));
+      const reactions = Array.from(reactionsMap.entries()).map(
+        ([reaction_id, count]) => ({
+          reaction_id,
+          count,
+        }),
+      );
 
       return {
         id: blog.id,

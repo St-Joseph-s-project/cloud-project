@@ -1,6 +1,7 @@
 # Interview Experience (Blogs) API Specification
 
 ## Overview
+
 This API provides endpoints for managing interview experience blogs, including creating blogs, voting, commenting, and filtering by tags.
 
 ## API Endpoints
@@ -10,6 +11,7 @@ This API provides endpoints for managing interview experience blogs, including c
 **Description:** Retrieve a paginated list of blogs with optional filtering and sorting
 
 **Query Parameters:**
+
 - `page` (number, default: 1) — Page number
 - `limit` (number, default: 6) — Items per page
 - `search` (string, optional) — Search in title, description, user_name (case-insensitive)
@@ -21,12 +23,14 @@ This API provides endpoints for managing interview experience blogs, including c
 **Authentication:** Optional (includes user vote if authenticated)
 
 **Example Request:**
+
 ```bash
 GET /api/blogs?page=1&limit=6&search=google&tag_id=1&sort_by=latest
 Authorization: Bearer <token>
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -58,6 +62,7 @@ Authorization: Bearer <token>
 ```
 
 **Notes:**
+
 - Search matches against title, description, and user_name
 - Deleted blogs (is_deleted = true) are filtered out
 - user_vote is "up", "down", or null (requires authentication)
@@ -73,6 +78,7 @@ Authorization: Bearer <token>
 **Authentication:** Required (Bearer token)
 
 **Request Body:**
+
 ```json
 {
   "title": "My Interview Experience",
@@ -82,11 +88,13 @@ Authorization: Bearer <token>
 ```
 
 **Fields:**
+
 - `title` (string, required) — Blog title
 - `description` (string, optional) — Blog description
 - `tags` (number[], optional) — Array of tag IDs
 
 **Example Request:**
+
 ```bash
 POST /api/blogs
 Authorization: Bearer <token>
@@ -100,6 +108,7 @@ Content-Type: application/json
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -125,6 +134,7 @@ Content-Type: application/json
 ```
 
 **Notes:**
+
 - user_id comes from the authenticated token
 - Tags array is optional and can be empty
 
@@ -139,6 +149,7 @@ Content-Type: application/json
 **Authentication:** Required (Bearer token)
 
 **Request Body:**
+
 ```json
 {
   "blog_id": 1,
@@ -147,10 +158,12 @@ Content-Type: application/json
 ```
 
 **Fields:**
+
 - `blog_id` (number, required) — Blog ID to vote on
 - `is_up_vote` (boolean, required) — true = upvote, false = downvote
 
 **Example Request:**
+
 ```bash
 POST /api/blogs/vote
 Authorization: Bearer <token>
@@ -163,6 +176,7 @@ Content-Type: application/json
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -185,6 +199,7 @@ Content-Type: application/json
 | "down" | true | down_vote--, up_vote++, user_vote = "up" |
 
 **Notes:**
+
 - user_id comes from the authenticated token
 - Implements upsert logic for vote_user_mapping
 
@@ -195,9 +210,11 @@ Content-Type: application/json
 **Description:** Get paginated comments for a specific blog
 
 **Path Parameters:**
+
 - `blog_id` (number, required) — Blog ID
 
 **Query Parameters:**
+
 - `page` (number, default: 1) — Page number
 - `limit` (number, default: 5) — Comments per page
 
@@ -206,11 +223,13 @@ Content-Type: application/json
 **Authentication:** Not required
 
 **Example Request:**
+
 ```bash
 GET /api/blogs/comments/1?page=1&limit=5
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -234,6 +253,7 @@ GET /api/blogs/comments/1?page=1&limit=5
 ```
 
 **Notes:**
+
 - Comments are sorted by created_at in descending order (newest first)
 - User names are joined from the users table
 
@@ -248,6 +268,7 @@ GET /api/blogs/comments/1?page=1&limit=5
 **Authentication:** Required (Bearer token)
 
 **Request Body:**
+
 ```json
 {
   "blog_id": 1,
@@ -256,10 +277,12 @@ GET /api/blogs/comments/1?page=1&limit=5
 ```
 
 **Fields:**
+
 - `blog_id` (number, required) — Blog ID
 - `comment` (string, required) — Comment text
 
 **Example Request:**
+
 ```bash
 POST /api/blogs/comments
 Authorization: Bearer <token>
@@ -272,6 +295,7 @@ Content-Type: application/json
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -288,6 +312,7 @@ Content-Type: application/json
 ```
 
 **Notes:**
+
 - user_id comes from the authenticated token
 - Comment must not be empty
 
@@ -302,15 +327,18 @@ Content-Type: application/json
 **Authentication:** Required
 
 **Path Parameters:**
+
 - `id` (number, required) — Comment ID
 
 **Example Request:**
+
 ```bash
 DELETE /api/blogs/comments/30
 Authorization: Bearer <token>
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -319,6 +347,7 @@ Authorization: Bearer <token>
 ```
 
 **Notes:**
+
 - User can only delete their own comments
 - Returns 403 if trying to delete another user's comment
 
@@ -335,11 +364,13 @@ Authorization: Bearer <token>
 **Query Parameters:** None
 
 **Example Request:**
+
 ```bash
 GET /api/tags
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -373,18 +404,21 @@ GET /api/tags
 **Authentication:** Required (Admin role only)
 
 **Query Parameters:**
+
 - `page` (number, default: 1) — Page number
 - `limit` (number, default: 10) — Items per page
 - `search_email` (string, optional) — Filter by user email (case-insensitive)
 - `sort_by` (string, default: "latest") — One of: "latest", "oldest"
 
 **Example Request:**
+
 ```bash
 GET /api/interview-experience/admin/blogs?page=1&limit=10&search_email=john@example.com&sort_by=latest
 Authorization: Bearer <admin_token>
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -417,6 +451,7 @@ Authorization: Bearer <admin_token>
 ```
 
 **Notes:**
+
 - Admin endpoint returns `user_email` field which is not available in regular user endpoint
 - Requires admin role (role_id: 1)
 
@@ -431,15 +466,18 @@ Authorization: Bearer <admin_token>
 **Authentication:** Required (Admin role only)
 
 **Path Parameters:**
+
 - `id` (number, required) — Blog ID
 
 **Example Request:**
+
 ```bash
 DELETE /api/interview-experience/admin/blogs/5
 Authorization: Bearer <admin_token>
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -448,6 +486,7 @@ Authorization: Bearer <admin_token>
 ```
 
 **Notes:**
+
 - Admin can delete any blog without ownership restrictions
 - Performs soft delete (sets is_deleted to true)
 - Requires admin role (role_id: 1)
@@ -466,6 +505,7 @@ Authorization: Bearer <admin_token>
 ## Database Tables
 
 ### blogs
+
 - `id` (INT, PRIMARY KEY)
 - `user_id` (INT, FOREIGN KEY)
 - `title` (VARCHAR)
@@ -476,6 +516,7 @@ Authorization: Bearer <admin_token>
 - `is_deleted` (BOOLEAN, default: false)
 
 ### comments
+
 - `id` (INT, PRIMARY KEY)
 - `user_id` (INT, FOREIGN KEY)
 - `blog_id` (INT, FOREIGN KEY)
@@ -483,15 +524,18 @@ Authorization: Bearer <admin_token>
 - `created_at` (TIMESTAMP)
 
 ### tags
+
 - `id` (INT, PRIMARY KEY)
 - `name` (VARCHAR)
 
 ### blog_tags_mapping
+
 - `id` (INT, PRIMARY KEY)
 - `blog_id` (INT, FOREIGN KEY)
 - `tag_id` (INT, FOREIGN KEY)
 
 ### vote_user_mapping
+
 - `id` (INT, PRIMARY KEY)
 - `user_id` (INT, FOREIGN KEY)
 - `blog_id` (INT, FOREIGN KEY)
@@ -511,6 +555,7 @@ All endpoints return consistent error responses:
 ```
 
 Common HTTP Status Codes:
+
 - `200` — Successful GET/POST/PUT/DELETE
 - `201` — Resource created successfully
 - `400` — Bad Request (validation error)

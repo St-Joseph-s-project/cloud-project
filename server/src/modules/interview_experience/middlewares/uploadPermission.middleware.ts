@@ -8,10 +8,10 @@ import prisma from "../../../lib/prisma.ts";
 export const uploadPermissionMiddleware = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
 
     if (!user || !user.userId) {
       return res.status(401).json({
@@ -34,12 +34,16 @@ export const uploadPermissionMiddleware = async (
     });
 
     // Set can_upload attribute on req.user
-    (req as any).user.can_upload = !!permission;
+    if (req.user) {
+      req.user.can_upload = !!permission;
+    }
 
     next();
   } catch (error) {
     console.error("Error in uploadPermissionMiddleware:", error);
-    (req as any).user.can_upload = false;
+    if (req.user) {
+      req.user.can_upload = false;
+    }
     next();
   }
 };

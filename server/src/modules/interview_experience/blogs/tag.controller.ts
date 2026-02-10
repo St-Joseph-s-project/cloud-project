@@ -4,7 +4,7 @@ import { sendSuccess, sendError } from "../../../utils/response.ts";
 
 export const getAllTags: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const tags = await tagService.getAllTags();
@@ -18,11 +18,16 @@ export const getAllTags: RequestHandler = async (
 
 export const createTags: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const result = await tagService.createTags();
-    return sendSuccess(res, 201, result, `Created ${result.created.length} tags, ${result.existing.length} already existed`);
+    return sendSuccess(
+      res,
+      201,
+      result,
+      `Created ${result.created.length} tags, ${result.existing.length} already existed`,
+    );
   } catch (error: any) {
     const errorMessage =
       error instanceof Error ? error.message : "Failed to create tags";

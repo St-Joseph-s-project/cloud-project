@@ -4,7 +4,7 @@ import { sendSuccess, sendError } from "../../../utils/response.ts";
 
 export const addBlogReaction: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const user = (req as any).user;
@@ -19,14 +19,14 @@ export const addBlogReaction: RequestHandler = async (
         res,
         400,
         "Bad Request",
-        "blog_id and reaction_id are required"
+        "blog_id and reaction_id are required",
       );
     }
 
     const reaction = await reactionService.addBlogReaction(
       blog_id,
       user.userId,
-      reaction_id
+      reaction_id,
     );
     return sendSuccess(res, 201, reaction, "Reaction added successfully");
   } catch (error: any) {
@@ -42,7 +42,7 @@ export const addBlogReaction: RequestHandler = async (
 
 export const removeBlogReaction: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const user = (req as any).user;
@@ -57,15 +57,11 @@ export const removeBlogReaction: RequestHandler = async (
         res,
         400,
         "Bad Request",
-        "blog_id and reaction_id are required"
+        "blog_id and reaction_id are required",
       );
     }
 
-    await reactionService.removeBlogReaction(
-      blog_id,
-      user.userId,
-      reaction_id
-    );
+    await reactionService.removeBlogReaction(blog_id, user.userId, reaction_id);
     return sendSuccess(res, 200, undefined, "Reaction removed successfully");
   } catch (error: any) {
     const errorMessage =
@@ -76,7 +72,7 @@ export const removeBlogReaction: RequestHandler = async (
 
 export const getBlogReactions: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const blog_id = Number(req.params.blog_id);
@@ -98,7 +94,7 @@ export const getBlogReactions: RequestHandler = async (
 
 export const addCommentReaction: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const user = (req as any).user;
@@ -113,14 +109,14 @@ export const addCommentReaction: RequestHandler = async (
         res,
         400,
         "Bad Request",
-        "comment_id and reaction_id are required"
+        "comment_id and reaction_id are required",
       );
     }
 
     const reaction = await reactionService.addCommentReaction(
       comment_id,
       user.userId,
-      reaction_id
+      reaction_id,
     );
     return sendSuccess(res, 201, reaction, "Reaction added successfully");
   } catch (error: any) {
@@ -135,7 +131,7 @@ export const addCommentReaction: RequestHandler = async (
 
 export const removeCommentReaction: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const user = (req as any).user;
@@ -150,14 +146,14 @@ export const removeCommentReaction: RequestHandler = async (
         res,
         400,
         "Bad Request",
-        "comment_id and reaction_id are required"
+        "comment_id and reaction_id are required",
       );
     }
 
     await reactionService.removeCommentReaction(
       comment_id,
       user.userId,
-      reaction_id
+      reaction_id,
     );
     return sendSuccess(res, 200, undefined, "Reaction removed successfully");
   } catch (error: any) {
@@ -169,7 +165,7 @@ export const removeCommentReaction: RequestHandler = async (
 
 export const getCommentReactions: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const comment_id = Number(req.params.comment_id);
@@ -177,17 +173,12 @@ export const getCommentReactions: RequestHandler = async (
     const user_id = user?.userId;
 
     if (!comment_id || isNaN(comment_id)) {
-      return sendError(
-        res,
-        400,
-        "Bad Request",
-        "Valid comment_id is required"
-      );
+      return sendError(res, 400, "Bad Request", "Valid comment_id is required");
     }
 
     const reactions = await reactionService.getCommentReactions(
       comment_id,
-      user_id
+      user_id,
     );
     return sendSuccess(res, 200, reactions);
   } catch (error: any) {

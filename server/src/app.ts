@@ -5,10 +5,12 @@ import cors from "cors";
 const app: Express = express();
 
 // --- MIDDLEWARE ---
-app.use(cors({
+app.use(
+  cors({
     origin: "http://localhost:5173", // URL of your frontend
-    credentials: true
-}));
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

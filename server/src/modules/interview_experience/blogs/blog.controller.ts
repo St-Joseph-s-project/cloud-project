@@ -4,7 +4,7 @@ import { sendSuccess, sendError } from "../../../utils/response.ts";
 
 export const createBlog: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const user = (req as any).user;
@@ -15,7 +15,11 @@ export const createBlog: RequestHandler = async (
 
     // Handle file uploads if permission is granted
     let files = [];
-    if (user.can_upload && (req as any).files && (req as any).files.length > 0) {
+    if (
+      user.can_upload &&
+      (req as any).files &&
+      (req as any).files.length > 0
+    ) {
       files = (req as any).files.map((file: any) => ({
         file_url: `${req.protocol}://${req.get("host")}/uploads/${file.filename}`,
         file_name: file.originalname,
@@ -34,20 +38,25 @@ export const createBlog: RequestHandler = async (
   }
 };
 
-export const getBlogs: RequestHandler = async (
-  req: Request,
-  res: Response
-) => {
+export const getBlogs: RequestHandler = async (req: Request, res: Response) => {
   try {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 6;
     const search = (req.query.search as string) || undefined;
     const tag_id = req.query.tag_id ? Number(req.query.tag_id) : undefined;
-    const sort_by = (req.query.sort_by as "latest" | "oldest" | "most_upvoted") || "latest";
+    const sort_by =
+      (req.query.sort_by as "latest" | "oldest" | "most_upvoted") || "latest";
     const user = (req as any).user;
     const userId = user?.userId;
 
-    const result = await blogService.getBlogs(page, limit, search, tag_id, sort_by, userId);
+    const result = await blogService.getBlogs(
+      page,
+      limit,
+      search,
+      tag_id,
+      sort_by,
+      userId,
+    );
     return sendSuccess(res, 200, result);
   } catch (error: any) {
     const errorMessage =
@@ -58,7 +67,7 @@ export const getBlogs: RequestHandler = async (
 
 export const getBlogById: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const blogId = Number(req.params.id);
@@ -85,10 +94,16 @@ export const getBlogById: RequestHandler = async (
 
 export const getAllBlogs: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
-    const result = await blogService.getBlogs(1, 1000, undefined, undefined, "latest");
+    const result = await blogService.getBlogs(
+      1,
+      1000,
+      undefined,
+      undefined,
+      "latest",
+    );
     return sendSuccess(res, 200, result);
   } catch (error: any) {
     const errorMessage =
@@ -97,10 +112,7 @@ export const getAllBlogs: RequestHandler = async (
   }
 };
 
-export const voteBlog: RequestHandler = async (
-  req: Request,
-  res: Response
-) => {
+export const voteBlog: RequestHandler = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     if (!user || !user.userId) {
@@ -110,7 +122,12 @@ export const voteBlog: RequestHandler = async (
     const { blog_id, is_up_vote } = req.body;
 
     if (!blog_id || is_up_vote === undefined) {
-      return sendError(res, 400, "Bad Request", "blog_id and is_up_vote are required");
+      return sendError(
+        res,
+        400,
+        "Bad Request",
+        "blog_id and is_up_vote are required",
+      );
     }
 
     const result = await blogService.voteBlog(blog_id, user.userId, is_up_vote);
@@ -124,7 +141,7 @@ export const voteBlog: RequestHandler = async (
 
 export const updateBlog: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const user = (req as any).user;
@@ -135,7 +152,11 @@ export const updateBlog: RequestHandler = async (
 
     // Handle file uploads if permission is granted
     let files = [];
-    if (user.can_upload && (req as any).files && (req as any).files.length > 0) {
+    if (
+      user.can_upload &&
+      (req as any).files &&
+      (req as any).files.length > 0
+    ) {
       files = (req as any).files.map((file: any) => ({
         file_url: `${req.protocol}://${req.get("host")}/uploads/${file.filename}`,
         file_name: file.originalname,
@@ -145,7 +166,11 @@ export const updateBlog: RequestHandler = async (
     }
 
     const blogData = { ...req.body, files };
-    const blog = await blogService.updateBlog(Number(req.params.id), blogData, user.userId);
+    const blog = await blogService.updateBlog(
+      Number(req.params.id),
+      blogData,
+      user.userId,
+    );
     return sendSuccess(res, 200, blog, "Blog updated successfully");
   } catch (error: any) {
     const errorMessage =
@@ -163,7 +188,7 @@ export const updateBlog: RequestHandler = async (
 
 export const deleteBlog: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const user = (req as any).user;
@@ -194,7 +219,7 @@ export const deleteBlog: RequestHandler = async (
 
 export const reactBlog: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const user = (req as any).user;
@@ -205,7 +230,12 @@ export const reactBlog: RequestHandler = async (
     const { blog_id, reaction_id } = req.body;
 
     if (!blog_id || !reaction_id) {
-      return sendError(res, 400, "Bad Request", "blog_id and reaction_id are required");
+      return sendError(
+        res,
+        400,
+        "Bad Request",
+        "blog_id and reaction_id are required",
+      );
     }
 
     await blogService.reactBlog(blog_id, user.userId, reaction_id);

@@ -1,407 +1,495 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../../hooks/store';
-import { createProblem, updateProblemThunk, fetchProblems } from '../../redux/slices/problemsSlice';
-import type { Problem, Sample, TestCase } from '../../types';
-import OneCompilerEmbed from '../components/OneCompilerEmbed';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAppSelector, useAppDispatch } from "../../hooks/store";
 import {
-    PlusIcon,
-    TrashIcon,
-    ArrowLeftIcon,
-    PencilSquareIcon,
-    CheckIcon,
-    CodeBracketIcon,
-    BeakerIcon
-} from '@heroicons/react/24/outline';
+  createProblem,
+  updateProblemThunk,
+  fetchProblems,
+} from "../../redux/slices/problemsSlice";
+import type { Problem, Sample, TestCase } from "../../types";
+import OneCompilerEmbed from "../components/OneCompilerEmbed";
+import toast from "react-hot-toast";
+import {
+  PlusIcon,
+  TrashIcon,
+  ArrowLeftIcon,
+  PencilSquareIcon,
+  CheckIcon,
+  CodeBracketIcon,
+  BeakerIcon,
+} from "@heroicons/react/24/outline";
 
 const ProblemForm: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
-    const dispatch = useAppDispatch();
-    const { items: problems } = useAppSelector((state) => state.problems);
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { items: problems } = useAppSelector((state) => state.problems);
 
-    const isNew = id === 'new';
-    const [isEditing, setIsEditing] = useState(isNew);
-    const [formData, setFormData] = useState<Problem>({
-        id: '',
-        title: '',
-        description: '',
-        difficulty: 'Easy',
-        category: 'Algorithms',
+  const isNew = id === "new";
+  const [isEditing, setIsEditing] = useState(isNew);
+  const [formData, setFormData] = useState<Problem>({
+    id: "",
+    title: "",
+    description: "",
+    difficulty: "Easy",
+    category: "Algorithms",
+    samples: [],
+    testCases: [],
+  });
+
+  // Fetch problems if not loaded and we are not creating new
+  useEffect(() => {
+    if (!isNew && problems.length === 0) {
+      dispatch(fetchProblems());
+    }
+  }, [dispatch, isNew, problems.length]);
+
+  useEffect(() => {
+    if (isNew) {
+      setFormData({
+        id: "",
+        title: "",
+        description: "",
+        difficulty: "Easy",
+        category: "Algorithms",
         samples: [],
-        testCases: []
-    });
+        testCases: [],
+      });
+      setIsEditing(true);
+    } else if (id) {
+      const problem = problems.find((p: Problem) => p.id === id);
+      if (problem) {
+        setFormData(problem);
+        setIsEditing(false);
+      } else if (problems.length > 0) {
+        // Only redirect if problems ARE loaded and we still didn't find it.
+        // If problems.length is 0, we are arguably still loading (or empty DB).
+        // Ideally we check 'loading' state but keeping it simple to 'problems.length > 0'
+        toast.error("Problem not found");
+        navigate("/problems");
+      }
+    }
+  }, [id, isNew, problems, navigate]);
 
-    // Fetch problems if not loaded and we are not creating new
-    useEffect(() => {
-        if (!isNew && problems.length === 0) {
-            dispatch(fetchProblems());
-        }
-    }, [dispatch, isNew, problems.length]);
+  const handleChange = (field: keyof Problem, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
-    useEffect(() => {
-        if (isNew) {
-            setFormData({
-                id: '',
-                title: '',
-                description: '',
-                difficulty: 'Easy',
-                category: 'Algorithms',
-                samples: [],
-                testCases: []
-            });
-            setIsEditing(true);
-        } else if (id) {
-            const problem = problems.find((p: Problem) => p.id === id);
-            if (problem) {
-                setFormData(problem);
-                setIsEditing(false);
-            } else if (problems.length > 0) {
-                // Only redirect if problems ARE loaded and we still didn't find it.
-                // If problems.length is 0, we are arguably still loading (or empty DB).
-                // Ideally we check 'loading' state but keeping it simple to 'problems.length > 0'
-                toast.error('Problem not found');
-                navigate('/problems');
-            }
-        }
-    }, [id, isNew, problems, navigate]);
-
-    const handleChange = (field: keyof Problem, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+  const addSample = () => {
+    const newSample: Sample = {
+      id: Date.now().toString(),
+      input: "",
+      output: "",
+      explanation: "",
     };
+    setFormData((prev) => ({ ...prev, samples: [...prev.samples, newSample] }));
+  };
 
-    const addSample = () => {
-        const newSample: Sample = { id: Date.now().toString(), input: '', output: '', explanation: '' };
-        setFormData(prev => ({ ...prev, samples: [...prev.samples, newSample] }));
+  const updateSample = (index: number, field: keyof Sample, value: string) => {
+    const newSamples = [...formData.samples];
+    newSamples[index] = { ...newSamples[index], [field]: value };
+    setFormData((prev) => ({ ...prev, samples: newSamples }));
+  };
+
+  const removeSample = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      samples: prev.samples.filter((_, i) => i !== index),
+    }));
+  };
+
+  const addTestCase = () => {
+    const newCase: TestCase = {
+      id: Date.now().toString(),
+      input: "",
+      output: "",
     };
+    setFormData((prev) => ({
+      ...prev,
+      testCases: [...prev.testCases, newCase],
+    }));
+  };
 
-    const updateSample = (index: number, field: keyof Sample, value: string) => {
-        const newSamples = [...formData.samples];
-        newSamples[index] = { ...newSamples[index], [field]: value };
-        setFormData(prev => ({ ...prev, samples: newSamples }));
-    };
+  const updateTestCase = (
+    index: number,
+    field: keyof TestCase,
+    value: string,
+  ) => {
+    const newCases = [...formData.testCases];
+    newCases[index] = { ...newCases[index], [field]: value };
+    setFormData((prev) => ({ ...prev, testCases: newCases }));
+  };
 
-    const removeSample = (index: number) => {
-        setFormData(prev => ({ ...prev, samples: prev.samples.filter((_, i) => i !== index) }));
-    };
+  const removeTestCase = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      testCases: prev.testCases.filter((_, i) => i !== index),
+    }));
+  };
 
-    const addTestCase = () => {
-        const newCase: TestCase = { id: Date.now().toString(), input: '', output: '' };
-        setFormData(prev => ({ ...prev, testCases: [...prev.testCases, newCase] }));
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (isNew) {
+        // Remove ID if it's auto-generated by DB, or generate a proper one if needed.
+        // Using Date.now() for ID is usually temporary. Backend should assign ID.
+        // But keeping existing logic structure:
+        const newProblem = { ...formData, id: undefined };
+        await dispatch(createProblem(newProblem)).unwrap();
+        toast.success("Problem created successfully");
+        navigate("/problems");
+      } else {
+        await dispatch(
+          updateProblemThunk({ id: formData.id, data: formData }),
+        ).unwrap();
+        toast.success("Problem updated successfully");
+        setIsEditing(false);
+      }
+    } catch (error) {
+      console.error("Failed to save problem:", error);
+      toast.error("Failed to save problem");
+    }
+  };
 
-    const updateTestCase = (index: number, field: keyof TestCase, value: string) => {
-        const newCases = [...formData.testCases];
-        newCases[index] = { ...newCases[index], [field]: value };
-        setFormData(prev => ({ ...prev, testCases: newCases }));
-    };
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "Easy":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "Medium":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      case "Hard":
+        return "bg-red-50 text-red-700 border-red-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
 
-    const removeTestCase = (index: number) => {
-        setFormData(prev => ({ ...prev, testCases: prev.testCases.filter((_, i) => i !== index) }));
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            if (isNew) {
-                // Remove ID if it's auto-generated by DB, or generate a proper one if needed. 
-                // Using Date.now() for ID is usually temporary. Backend should assign ID.
-                // But keeping existing logic structure:
-                const newProblem = { ...formData, id: undefined };
-                await dispatch(createProblem(newProblem)).unwrap();
-                toast.success('Problem created successfully');
-                navigate('/problems');
-            } else {
-                await dispatch(updateProblemThunk({ id: formData.id, data: formData })).unwrap();
-                toast.success('Problem updated successfully');
-                setIsEditing(false);
-            }
-        } catch (error) {
-            console.error('Failed to save problem:', error);
-            toast.error('Failed to save problem');
-        }
-    };
-
-    const getDifficultyColor = (difficulty: string) => {
-        switch (difficulty) {
-            case 'Easy': return 'bg-green-50 text-green-700 border-green-200';
-            case 'Medium': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-            case 'Hard': return 'bg-red-50 text-red-700 border-red-200';
-            default: return 'bg-gray-50 text-gray-700 border-gray-200';
-        }
-    };
-
-    return (
-        <div className="min-h-screen bg-white">
-            <div className="container mx-auto px-4 py-6">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => navigate('/problems')}
-                            className="p-2 rounded-md text-gray-600 hover:text-blue-600 hover:bg-gray-100"
-                        >
-                            <ArrowLeftIcon className="h-5 w-5" />
-                        </button>
-                        <div>
-                            <h1 className="text-2xl font-semibold text-gray-800">
-                                {isNew ? 'Create Problem' : formData.title}
-                            </h1>
-                            <div className="flex items-center gap-3 mt-1">
-                                {!isNew && (
-                                    <span className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border ${getDifficultyColor(formData.difficulty)}`}>
-                                        {formData.difficulty}
-                                    </span>
-                                )}
-                                <span className="text-sm text-gray-600">
-                                    {isNew ? 'Add a new coding challenge' : `ID: ${formData.id.slice(0, 8)}`}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        {!isEditing ? (
-                            <button
-                                onClick={() => setIsEditing(true)}
-                                className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md flex items-center"
-                            >
-                                <PencilSquareIcon className="h-4 w-4 mr-2" />
-                                Edit
-                            </button>
-                        ) : (
-                            <>
-                                <button
-                                    onClick={() => isNew ? navigate('/problems') : setIsEditing(false)}
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleSubmit}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md flex items-center"
-                                >
-                                    <CheckIcon className="h-4 w-4 mr-2" />
-                                    {isNew ? 'Create' : 'Save'}
-                                </button>
-                            </>
-                        )}
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Left Column */}
-                    <div className="space-y-6">
-                        {/* Basic Information */}
-                        <div className="bg-white border border-gray-200 rounded-lg p-6">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-4">Problem Information</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                                    <input
-                                        type="text"
-                                        disabled={!isEditing}
-                                        value={formData.title}
-                                        onChange={(e) => handleChange('title', e.target.value)}
-                                        className="block w-full rounded-md border border-gray-300 px-4 py-2.5 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                                        placeholder="Enter problem title"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
-                                        <select
-                                            disabled={!isEditing}
-                                            value={formData.difficulty}
-                                            onChange={(e) => handleChange('difficulty', e.target.value)}
-                                            className="block w-full rounded-md border border-gray-300 px-4 py-2.5 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                                        >
-                                            <option value="Easy">Easy</option>
-                                            <option value="Medium">Medium</option>
-                                            <option value="Hard">Hard</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                                        <select
-                                            disabled={!isEditing}
-                                            value={formData.category}
-                                            onChange={(e) => handleChange('category', e.target.value)}
-                                            className="block w-full rounded-md border border-gray-300 px-4 py-2.5 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                                        >
-                                            <option value="Algorithms">Algorithms</option>
-                                            <option value="Data Structures">Data Structures</option>
-                                            <option value="SQL Database">SQL Database</option>
-                                            <option value="OS">OS</option>
-                                            <option value="System Design">System Design</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                                    <textarea
-                                        disabled={!isEditing}
-                                        rows={6}
-                                        value={formData.description}
-                                        onChange={(e) => handleChange('description', e.target.value)}
-                                        className="block w-full rounded-md border border-gray-300 px-4 py-3 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                                        placeholder="Problem description..."
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Sample Cases */}
-                        <div className="bg-white border border-gray-200 rounded-lg p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold text-gray-800">Sample Cases</h3>
-                                {isEditing && (
-                                    <button
-                                        onClick={addSample}
-                                        className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md flex items-center"
-                                    >
-                                        <PlusIcon className="h-4 w-4 mr-1.5" />
-                                        Add Sample
-                                    </button>
-                                )}
-                            </div>
-                            <div className="space-y-4">
-                                {formData.samples.length === 0 ? (
-                                    <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-md">
-                                        <CodeBracketIcon className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                                        <p className="text-sm text-gray-500">No sample cases</p>
-                                    </div>
-                                ) : (
-                                    formData.samples.map((sample, idx) => (
-                                        <div key={sample.id} className="border border-gray-200 rounded-md p-4">
-                                            {isEditing && (
-                                                <button
-                                                    onClick={() => removeSample(idx)}
-                                                    className="float-right p-1 text-gray-400 hover:text-red-500"
-                                                >
-                                                    <TrashIcon className="h-4 w-4" />
-                                                </button>
-                                            )}
-                                            <div className="text-sm font-medium text-gray-700 mb-3">Sample {idx + 1}</div>
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <label className="block text-xs text-gray-500 mb-1">Input</label>
-                                                    <textarea
-                                                        disabled={!isEditing}
-                                                        rows={2}
-                                                        value={sample.input}
-                                                        onChange={(e) => updateSample(idx, 'input', e.target.value)}
-                                                        className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono disabled:bg-gray-50"
-                                                        placeholder="Sample input..."
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs text-gray-500 mb-1">Output</label>
-                                                    <textarea
-                                                        disabled={!isEditing}
-                                                        rows={2}
-                                                        value={sample.output}
-                                                        onChange={(e) => updateSample(idx, 'output', e.target.value)}
-                                                        className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono disabled:bg-gray-50"
-                                                        placeholder="Expected output..."
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs text-gray-500 mb-1">Explanation</label>
-                                                    <input
-                                                        disabled={!isEditing}
-                                                        type="text"
-                                                        value={sample.explanation || ''}
-                                                        onChange={(e) => updateSample(idx, 'explanation', e.target.value)}
-                                                        className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-50"
-                                                        placeholder="Brief explanation..."
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Column */}
-                    <div className="space-y-6">
-                        {/* Test Cases */}
-                        <div className="bg-white border border-gray-200 rounded-lg p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold text-gray-800">Test Cases</h3>
-                                {isEditing && (
-                                    <button
-                                        onClick={addTestCase}
-                                        className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md flex items-center"
-                                    >
-                                        <PlusIcon className="h-4 w-4 mr-1.5" />
-                                        Add Test Case
-                                    </button>
-                                )}
-                            </div>
-                            <div className="space-y-4 max-h-[500px] overflow-y-auto">
-                                {formData.testCases.length === 0 ? (
-                                    <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-md">
-                                        <BeakerIcon className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                                        <p className="text-sm text-gray-500">No test cases</p>
-                                    </div>
-                                ) : (
-                                    formData.testCases.map((tc, idx) => (
-                                        <div key={tc.id} className="border border-gray-200 rounded-md p-4">
-                                            {isEditing && (
-                                                <button
-                                                    onClick={() => removeTestCase(idx)}
-                                                    className="float-right p-1 text-gray-400 hover:text-red-500"
-                                                >
-                                                    <TrashIcon className="h-4 w-4" />
-                                                </button>
-                                            )}
-                                            <div className="text-sm font-medium text-gray-700 mb-3">Test Case {idx + 1}</div>
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <label className="block text-xs text-gray-500 mb-1">Input</label>
-                                                    <textarea
-                                                        disabled={!isEditing}
-                                                        rows={3}
-                                                        value={tc.input}
-                                                        onChange={(e) => updateTestCase(idx, 'input', e.target.value)}
-                                                        className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono disabled:bg-gray-50"
-                                                        placeholder="Test case input..."
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs text-gray-500 mb-1">Expected Output</label>
-                                                    <textarea
-                                                        disabled={!isEditing}
-                                                        rows={3}
-                                                        value={tc.output}
-                                                        onChange={(e) => updateTestCase(idx, 'output', e.target.value)}
-                                                        className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono disabled:bg-gray-50"
-                                                        placeholder="Expected output..."
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-
-                        {/* OneCompiler */}
-                        <div className="bg-white border border-gray-200 rounded-lg p-6">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-4">Admin Testing</h3>
-                            <div className="h-[400px] rounded-md overflow-hidden border border-gray-200">
-                                <OneCompilerEmbed />
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/problems")}
+              className="p-2 rounded-md text-gray-600 hover:text-blue-600 hover:bg-gray-100"
+            >
+              <ArrowLeftIcon className="h-5 w-5" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-800">
+                {isNew ? "Create Problem" : formData.title}
+              </h1>
+              <div className="flex items-center gap-3 mt-1">
+                {!isNew && (
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border ${getDifficultyColor(formData.difficulty)}`}
+                  >
+                    {formData.difficulty}
+                  </span>
+                )}
+                <span className="text-sm text-gray-600">
+                  {isNew
+                    ? "Add a new coding challenge"
+                    : `ID: ${formData.id.slice(0, 8)}`}
+                </span>
+              </div>
             </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {!isEditing ? (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md flex items-center"
+              >
+                <PencilSquareIcon className="h-4 w-4 mr-2" />
+                Edit
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() =>
+                    isNew ? navigate("/problems") : setIsEditing(false)
+                  }
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md flex items-center"
+                >
+                  <CheckIcon className="h-4 w-4 mr-2" />
+                  {isNew ? "Create" : "Save"}
+                </button>
+              </>
+            )}
+          </div>
         </div>
-    );
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column */}
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Problem Information
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    disabled={!isEditing}
+                    value={formData.title}
+                    onChange={(e) => handleChange("title", e.target.value)}
+                    className="block w-full rounded-md border border-gray-300 px-4 py-2.5 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
+                    placeholder="Enter problem title"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Difficulty
+                    </label>
+                    <select
+                      disabled={!isEditing}
+                      value={formData.difficulty}
+                      onChange={(e) =>
+                        handleChange("difficulty", e.target.value)
+                      }
+                      className="block w-full rounded-md border border-gray-300 px-4 py-2.5 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
+                    >
+                      <option value="Easy">Easy</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Hard">Hard</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Category
+                    </label>
+                    <select
+                      disabled={!isEditing}
+                      value={formData.category}
+                      onChange={(e) => handleChange("category", e.target.value)}
+                      className="block w-full rounded-md border border-gray-300 px-4 py-2.5 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
+                    >
+                      <option value="Algorithms">Algorithms</option>
+                      <option value="Data Structures">Data Structures</option>
+                      <option value="SQL Database">SQL Database</option>
+                      <option value="OS">OS</option>
+                      <option value="System Design">System Design</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    disabled={!isEditing}
+                    rows={6}
+                    value={formData.description}
+                    onChange={(e) =>
+                      handleChange("description", e.target.value)
+                    }
+                    className="block w-full rounded-md border border-gray-300 px-4 py-3 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
+                    placeholder="Problem description..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Sample Cases */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Sample Cases
+                </h3>
+                {isEditing && (
+                  <button
+                    onClick={addSample}
+                    className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md flex items-center"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-1.5" />
+                    Add Sample
+                  </button>
+                )}
+              </div>
+              <div className="space-y-4">
+                {formData.samples.length === 0 ? (
+                  <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-md">
+                    <CodeBracketIcon className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">No sample cases</p>
+                  </div>
+                ) : (
+                  formData.samples.map((sample, idx) => (
+                    <div
+                      key={sample.id}
+                      className="border border-gray-200 rounded-md p-4"
+                    >
+                      {isEditing && (
+                        <button
+                          onClick={() => removeSample(idx)}
+                          className="float-right p-1 text-gray-400 hover:text-red-500"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                      <div className="text-sm font-medium text-gray-700 mb-3">
+                        Sample {idx + 1}
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            Input
+                          </label>
+                          <textarea
+                            disabled={!isEditing}
+                            rows={2}
+                            value={sample.input}
+                            onChange={(e) =>
+                              updateSample(idx, "input", e.target.value)
+                            }
+                            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono disabled:bg-gray-50"
+                            placeholder="Sample input..."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            Output
+                          </label>
+                          <textarea
+                            disabled={!isEditing}
+                            rows={2}
+                            value={sample.output}
+                            onChange={(e) =>
+                              updateSample(idx, "output", e.target.value)
+                            }
+                            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono disabled:bg-gray-50"
+                            placeholder="Expected output..."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            Explanation
+                          </label>
+                          <input
+                            disabled={!isEditing}
+                            type="text"
+                            value={sample.explanation || ""}
+                            onChange={(e) =>
+                              updateSample(idx, "explanation", e.target.value)
+                            }
+                            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-50"
+                            placeholder="Brief explanation..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Test Cases */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Test Cases
+                </h3>
+                {isEditing && (
+                  <button
+                    onClick={addTestCase}
+                    className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md flex items-center"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-1.5" />
+                    Add Test Case
+                  </button>
+                )}
+              </div>
+              <div className="space-y-4 max-h-[500px] overflow-y-auto">
+                {formData.testCases.length === 0 ? (
+                  <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-md">
+                    <BeakerIcon className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">No test cases</p>
+                  </div>
+                ) : (
+                  formData.testCases.map((tc, idx) => (
+                    <div
+                      key={tc.id}
+                      className="border border-gray-200 rounded-md p-4"
+                    >
+                      {isEditing && (
+                        <button
+                          onClick={() => removeTestCase(idx)}
+                          className="float-right p-1 text-gray-400 hover:text-red-500"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                      <div className="text-sm font-medium text-gray-700 mb-3">
+                        Test Case {idx + 1}
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            Input
+                          </label>
+                          <textarea
+                            disabled={!isEditing}
+                            rows={3}
+                            value={tc.input}
+                            onChange={(e) =>
+                              updateTestCase(idx, "input", e.target.value)
+                            }
+                            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono disabled:bg-gray-50"
+                            placeholder="Test case input..."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            Expected Output
+                          </label>
+                          <textarea
+                            disabled={!isEditing}
+                            rows={3}
+                            value={tc.output}
+                            onChange={(e) =>
+                              updateTestCase(idx, "output", e.target.value)
+                            }
+                            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono disabled:bg-gray-50"
+                            placeholder="Expected output..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* OneCompiler */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Admin Testing
+              </h3>
+              <div className="h-[400px] rounded-md overflow-hidden border border-gray-200">
+                <OneCompilerEmbed />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default ProblemForm;

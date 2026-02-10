@@ -21,7 +21,9 @@ export const createProblem = createAsyncThunk(
       const data = await problemsAPI.create(problemData);
       return data.data; // Assuming API returns { success: true, data: ... }
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || "Failed to create problem");
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to create problem",
+      );
     }
   },
 );
@@ -33,7 +35,9 @@ export const updateProblemThunk = createAsyncThunk(
       const response = await problemsAPI.update(id, data);
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || "Failed to update problem");
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to update problem",
+      );
     }
   },
 );
@@ -45,7 +49,9 @@ export const deleteProblemThunk = createAsyncThunk(
       await problemsAPI.delete(id);
       return id;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || "Failed to delete problem");
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to delete problem",
+      );
     }
   },
 );
@@ -57,7 +63,9 @@ export const fetchProblemById = createAsyncThunk(
       const response = await problemsAPI.getById(id);
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || "Failed to fetch problem");
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to fetch problem",
+      );
     }
   },
 );
