@@ -47,6 +47,9 @@ export interface CommentType {
   comment: string;
   created_at: string;
   user_name: string;
+  reply_count?: number;
+  parent_id?: number | null;
+  replies?: CommentType[];
 }
 
 export interface PaginatedResponse<T> {
@@ -73,6 +76,7 @@ export interface AddBlogPayload {
 export interface AddCommentPayload {
   blog_id: number;
   comment: string;
+  parent_id?: number;
 }
 
 export interface UpdateCommentPayload {

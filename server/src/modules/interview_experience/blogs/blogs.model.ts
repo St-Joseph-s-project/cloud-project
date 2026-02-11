@@ -104,11 +104,15 @@ export interface Comment {
   user_name: string;
   user_reaction: number | null;
   reactions: ReactionResponse[];
+  parent_id?: number | null;
+  reply_count?: number;
+  replies?: Comment[];
 }
 
 export interface CommentCreateInput {
   blog_id: number;
   comment: string;
+  parent_id?: number;
 }
 
 export interface CommentUpdateInput {
