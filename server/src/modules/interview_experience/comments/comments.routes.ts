@@ -5,6 +5,7 @@ import {
   updateComment,
   deleteComment,
   reactComment,
+  getReplies,
 } from "./comments.controller.ts";
 import {
   authMiddleware,
@@ -15,6 +16,9 @@ const router = Router();
 
 // Get comments for a blog (public, optional auth for reactions)
 router.get("/:blog_id", optionalAuthMiddleware, getComments);
+
+// Get replies for a comment
+router.get("/:id/replies", optionalAuthMiddleware, getReplies);
 
 // Add a comment (protected)
 router.post("/", authMiddleware, addComment);

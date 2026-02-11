@@ -3,12 +3,13 @@ import type {
   BlogType,
   CommentType,
 } from "../../../types/pages/interviewExperiance/apiTypes";
-import { commentsAPI, reactionsAPI } from "../../../utils/axios";
+import { commentsAPI } from "../../../utils/axios";
 import { AiOutlineEdit } from "react-icons/ai";
-import ReactionSelector from "./ReactionSelector"; // Import ReactionSelector
+
 import toast from "react-hot-toast";
 import { useAppSelector } from "../../../hooks/store";
 import AddBlogModel from "./AddBlogModel";
+import CommentItem from "./CommentItem";
 
 interface BlogModelProps {
   blog: BlogType | null;
@@ -45,11 +46,10 @@ const BlogModel: React.FC<BlogModelProps> = ({
     null,
   );
 
+
+
   // Edit related state
   const [isEditingBlog, setIsEditingBlog] = useState(false);
-  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
-  const [editCommentText, setEditCommentText] = useState("");
-  const [submittingEditComment, setSubmittingEditComment] = useState(false);
 
   const COMMENTS_PER_PAGE = 5;
 
@@ -160,80 +160,6 @@ const BlogModel: React.FC<BlogModelProps> = ({
     }
   };
 
-  const startEditingComment = (comment: CommentType) => {
-    setEditingCommentId(comment.id);
-    setEditCommentText(comment.comment);
-  };
-
-  const cancelEditingComment = () => {
-    setEditingCommentId(null);
-    setEditCommentText("");
-  };
-
-  const handleUpdateComment = async () => {
-    if (!editingCommentId || !editCommentText.trim()) return;
-    setSubmittingEditComment(true);
-    try {
-      await commentsAPI.update(editingCommentId, {
-        comment: editCommentText.trim(),
-      });
-      toast.success("Comment updated");
-      setEditingCommentId(null);
-      setEditCommentText("");
-      // Refresh current page
-      fetchComments(commentPage);
-    } catch {
-      toast.error("Failed to update comment");
-    } finally {
-      setSubmittingEditComment(false);
-    }
-  };
-
-  const handleCommentReaction = async (commentId: number, reactionId: number) => {
-    const comment = comments.find((c) => c.id === commentId);
-    if (!comment) return;
-
-    const isSameReaction = (comment as any).user_reaction === reactionId;
-
-    // Optimistic update logic
-    setComments((prev) =>
-      prev.map((x) => {
-        if (x.id !== commentId) return x;
-
-        let newCount = (x as any).reactionCount || 0;
-        if (isSameReaction) {
-          newCount = Math.max(0, newCount - 1);
-        } else if (!(x as any).user_reaction) {
-          newCount = newCount + 1;
-        }
-
-        return {
-          ...x,
-          isUserReacted: !isSameReaction,
-          user_reaction: isSameReaction ? null : reactionId,
-          reactionCount: newCount,
-        };
-      })
-    );
-
-    try {
-      if (isSameReaction) {
-        await reactionsAPI.removeCommentReaction({
-          comment_id: commentId,
-          reaction_id: reactionId,
-        });
-      } else {
-        await reactionsAPI.addCommentReaction({
-          comment_id: commentId,
-          reaction_id: reactionId,
-        });
-      }
-    } catch (err) {
-      console.error("Failed to reaction comment", err);
-      fetchComments(commentPage); // Rollback by refetch
-    }
-  };
-
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -244,20 +170,6 @@ const BlogModel: React.FC<BlogModelProps> = ({
       month: "long",
       day: "numeric",
     });
-  };
-
-  const timeAgo = (dateStr: string) => {
-    const now = new Date();
-    const date = new Date(dateStr);
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return "just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHrs = Math.floor(diffMins / 60);
-    if (diffHrs < 24) return `${diffHrs}h ago`;
-    const diffDays = Math.floor(diffHrs / 24);
-    if (diffDays < 30) return `${diffDays}d ago`;
-    return formatDate(dateStr);
   };
 
   if (!isOpen || !blog) return null;
@@ -401,109 +313,16 @@ const BlogModel: React.FC<BlogModelProps> = ({
               ) : (
                 <div className="space-y-4">
                   {comments.map((c: any) => (
-                    <div key={c.id} className="flex gap-3 group">
-                      <div className="w-8 h-8 shrink-0 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold">
-                        {c.user_name?.charAt(0)?.toUpperCase() || "U"}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium text-gray-800">
-                            {c.user_name}
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            {timeAgo(c.created_at)}
-                          </span>
-
-                          <div className="ml-auto flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {/* Edit Comment Button */}
-                            {user &&
-                              user.id === c.user_id &&
-                              editingCommentId !== c.id && (
-                                <button
-                                  onClick={() => startEditingComment(c)}
-                                  className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
-                                  title="Edit comment"
-                                >
-                                  <AiOutlineEdit className="w-4 h-4" />
-                                </button>
-                              )}
-
-                            {/* Delete Comment Button */}
-                            {(isAdmin ||
-                              (user && user.id === c.user_id)) && (
-                                <button
-                                  onClick={() => handleDeleteComment(c.id)}
-                                  disabled={deletingCommentId === c.id}
-                                  className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all disabled:opacity-50"
-                                  title="Delete comment"
-                                >
-                                  {deletingCommentId === c.id ? (
-                                    <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                                  ) : (
-                                    <svg
-                                      className="w-4 h-4"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                      />
-                                    </svg>
-                                  )}
-                                </button>
-                              )}
-                          </div>
-                        </div>
-
-                        {/* Comment Content or Edit Form */}
-                        {editingCommentId === c.id ? (
-                          <div className="mt-2">
-                            <textarea
-                              value={editCommentText}
-                              onChange={(e) =>
-                                setEditCommentText(e.target.value)
-                              }
-                              rows={2}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                            />
-                            <div className="flex gap-2">
-                              <button
-                                onClick={handleUpdateComment}
-                                disabled={
-                                  submittingEditComment ||
-                                  !editCommentText.trim()
-                                }
-                                className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
-                              >
-                                {submittingEditComment ? "Saving..." : "Save"}
-                              </button>
-                              <button
-                                onClick={cancelEditingComment}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-600 leading-relaxed">
-                            {c.comment}
-                          </p>
-                        )}
-
-                        <div className="flex items-center gap-2 mt-2">
-                          <ReactionSelector
-                            currentReaction={(c as any).user_reaction}
-                            reactionCount={(c as any).reactionCount || 0}
-                            onSelect={(reactionId) => handleCommentReaction(c.id, reactionId)}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    <CommentItem
+                      key={c.id}
+                      comment={c}
+                      userId={user?.id}
+                      isAdmin={isAdmin}
+                      onDelete={async (id) => {
+                        await handleDeleteComment(id);
+                      }}
+                      onReactionUpdate={() => fetchComments(commentPage)}
+                    />
                   ))}
                 </div>
               )}

@@ -484,9 +484,16 @@ model comments {
   blog_id           Int
   comment           String
   created_at        DateTime?           @default(now()) @db.Timestamp(6)
+  parent_id         Int?
   comment_reactions comment_reactions[]
   blogs             blogs               @relation(fields: [blog_id], references: [id], onDelete: Cascade, map: "fk_comment_blog")
+  comments          comments?           @relation("commentsTocomments", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_parent")
+  other_comments    comments[]          @relation("commentsTocomments")
   users             User                @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_comment_user")
+
+  @@index([blog_id, parent_id], map: "idx_comments_blog_parent")
+  @@index([created_at], map: "idx_comments_created_at")
+  @@index([parent_id], map: "idx_comments_parent_id")
 }
 
 model tags {
@@ -573,8 +580,8 @@ model blog_files {
   created_at     DateTime? @default(now()) @db.Timestamptz(6)
   blogs          blogs     @relation(fields: [blog_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_blog_files_blog")
 
-  @@index([blog_id], map: "idx_blog_files_blog_id")
   @@unique([blog_id, file_url], map: "idx_blog_files_unique")
+  @@index([blog_id], map: "idx_blog_files_blog_id")
 }
 
 enum difficulty_enum {

@@ -14,7 +14,7 @@ export const addComment: RequestHandler = async (
 
     const comment = await commentService.addComment(req.body, user.userId);
     return sendSuccess(res, 201, comment, "Comment added successfully!");
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage =
       error instanceof Error ? error.message : "Failed to add comment";
     return sendError(res, 400, "Bad Request", errorMessage);
@@ -44,7 +44,7 @@ export const getComments: RequestHandler = async (
       userId,
     );
     return sendSuccess(res, 200, result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage =
       error instanceof Error ? error.message : "Failed to fetch comments";
     return sendError(res, 500, "Internal Server Error", errorMessage);
@@ -72,7 +72,7 @@ export const updateComment: RequestHandler = async (
       user.userId,
     );
     return sendSuccess(res, 200, comment, "Comment updated successfully");
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage =
       error instanceof Error ? error.message : "Failed to update comment";
 
@@ -103,7 +103,7 @@ export const deleteComment: RequestHandler = async (
 
     await commentService.deleteComment(commentId, user.userId, user.role);
     return sendSuccess(res, 200, undefined, "Comment deleted successfully");
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage =
       error instanceof Error ? error.message : "Failed to delete comment";
 
@@ -140,9 +140,38 @@ export const reactComment: RequestHandler = async (
 
     await commentService.reactComment(comment_id, user.userId, reaction_id);
     return sendSuccess(res, 200, undefined, "Reaction updated successfully");
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage =
       error instanceof Error ? error.message : "Failed to react to comment";
+    return sendError(res, 500, "Internal Server Error", errorMessage);
+  }
+};
+
+export const getReplies: RequestHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const commentId = Number(req.params.id);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
+
+    if (!commentId || isNaN(commentId)) {
+      return sendError(res, 400, "Bad Request", "Valid comment ID is required");
+    }
+
+    const user = (req as any).user;
+    const userId = user?.userId;
+
+    const result = await commentService.getReplies(
+      commentId,
+      page,
+      limit,
+      userId
+    );
+    return sendSuccess(res, 200, result);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Failed to fetch replies";
     return sendError(res, 500, "Internal Server Error", errorMessage);
   }
 };

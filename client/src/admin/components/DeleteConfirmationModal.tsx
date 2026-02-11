@@ -156,11 +156,10 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
               <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
                 <button
                   type="button"
-                  className={`inline-flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm sm:ml-3 sm:w-auto ${
-                    confirmTitle === problemTitle
-                      ? "bg-red-600 hover:bg-red-500"
-                      : "bg-red-300 cursor-not-allowed"
-                  }`}
+                  className={`inline-flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm sm:ml-3 sm:w-auto ${confirmTitle === problemTitle
+                    ? "bg-red-600 hover:bg-red-500"
+                    : "bg-red-300 cursor-not-allowed"
+                    }`}
                   disabled={confirmTitle !== problemTitle}
                   onClick={handleFinalConfirm}
                   title={

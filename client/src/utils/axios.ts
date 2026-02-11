@@ -153,6 +153,16 @@ export const commentsAPI = {
     const response = await axiosInstance.delete(`/blogs/comments/${id}`);
     return response.data;
   },
+  getReplies: async (
+    commentId: number,
+    params: { page?: number; limit?: number },
+  ) => {
+    const response = await axiosInstance.get(
+      `/blogs/comments/${commentId}/replies`,
+      { params },
+    );
+    return response.data;
+  },
 };
 
 export const reactionsAPI = {

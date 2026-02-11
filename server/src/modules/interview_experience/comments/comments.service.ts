@@ -14,7 +14,7 @@ export class CommentService {
     input: CommentCreateInput,
     userId: number,
   ): Promise<Comment> {
-    const { blog_id, comment } = input;
+    const { blog_id, comment, parent_id } = input;
 
     if (!blog_id || !comment) {
       throw new Error("blog_id and comment are required");
@@ -28,11 +28,22 @@ export class CommentService {
       throw new Error("Blog not found");
     }
 
+    if (parent_id) {
+      const parentComment = await prisma.comments.findUnique({
+        where: { id: parent_id },
+      });
+
+      if (!parentComment) {
+        throw new Error("Parent comment not found");
+      }
+    }
+
     const createdComment = await prisma.comments.create({
       data: {
         user_id: userId,
         blog_id,
         comment,
+        parent_id: parent_id || null,
       },
       include: {
         users: { select: { name: true } },
@@ -48,6 +59,7 @@ export class CommentService {
       user_name: createdComment.users.name,
       user_reaction: null,
       reactions: [],
+      parent_id: createdComment.parent_id,
     };
   }
 
@@ -71,17 +83,20 @@ export class CommentService {
     }
 
     const total = await prisma.comments.count({
-      where: { blog_id },
+      where: { blog_id, parent_id: null },
     });
 
     const comments = await prisma.comments.findMany({
-      where: { blog_id },
+      where: { blog_id, parent_id: null },
       orderBy: { created_at: "desc" },
       skip: offset,
       take: limit,
       include: {
         users: { select: { name: true } },
         comment_reactions: true,
+        _count: {
+          select: { other_comments: true } // Replies count
+        }
       },
     });
 
@@ -116,12 +131,125 @@ export class CommentService {
         user_name: comment.users.name,
         user_reaction,
         reactions,
+        parent_id: comment.parent_id,
+        reply_count: comment._count.other_comments,
       };
     });
 
     return {
       success: true,
       data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Get replies for a comment
+   */
+  async getReplies(
+    comment_id: number,
+    page: number = 1,
+    limit: number = 5,
+    userId?: number,
+  ): Promise<PaginatedResponse<Comment>> {
+    const offset = (page - 1) * limit;
+
+    // Recursive CTE to get all descendant IDs
+    const rawIds = await prisma.$queryRaw<{ id: number; parent_id: number }[]>`
+        WITH RECURSIVE comment_tree AS (
+            SELECT id, parent_id
+            FROM "comments"
+            WHERE parent_id = ${comment_id}
+            
+            UNION ALL
+            
+            SELECT c.id, c.parent_id
+            FROM "comments" c
+            INNER JOIN comment_tree ct ON c.parent_id = ct.id
+        )
+        SELECT id, parent_id FROM comment_tree
+    `;
+
+    const descendantIds = rawIds.map(r => Number(r.id)); // Ensure numbers
+
+    if (descendantIds.length === 0) {
+      return {
+        success: true,
+        data: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
+
+    // Fetch full details for all descendants
+    const allDescendants = await prisma.comments.findMany({
+      where: { id: { in: descendantIds } },
+      orderBy: { created_at: "asc" },
+      include: {
+        users: { select: { name: true } },
+        comment_reactions: true,
+      },
+    });
+
+    // Map to application Comment type
+    const mappedDescendants: Comment[] = allDescendants.map((reply) => {
+      const reactionsMap = new Map<number, number>();
+      let user_reaction: number | null = null;
+      reply.comment_reactions.forEach((r) => {
+        reactionsMap.set(r.reaction_id, (reactionsMap.get(r.reaction_id) || 0) + 1);
+        if (userId && r.user_id === userId) {
+          user_reaction = r.reaction_id;
+        }
+      });
+      const reactions = Array.from(reactionsMap.entries()).map(([reaction_id, count]) => ({
+        reaction_id,
+        count,
+      }));
+      return {
+        id: reply.id,
+        user_id: reply.user_id,
+        blog_id: reply.blog_id,
+        comment: reply.comment,
+        created_at: reply.created_at || undefined,
+        user_name: reply.users.name,
+        user_reaction,
+        reactions,
+        parent_id: reply.parent_id,
+        replies: [], // Initialize replies array
+      };
+    });
+
+    // Build Tree
+    const commentMap = new Map<number, Comment>();
+    mappedDescendants.forEach(c => commentMap.set(c.id, c));
+
+    const rootReplies: Comment[] = [];
+
+    mappedDescendants.forEach(c => {
+      if (c.parent_id === comment_id) {
+        rootReplies.push(c);
+      } else if (c.parent_id && commentMap.has(c.parent_id)) {
+        const parent = commentMap.get(c.parent_id);
+        parent?.replies?.push(c);
+      }
+    });
+
+    // Apply pagination only to top-level replies (direct children)
+    const total = rootReplies.length;
+    const paginatedRootReplies = rootReplies.slice(offset, offset + limit);
+
+    return {
+      success: true,
+      data: paginatedRootReplies,
       pagination: {
         page,
         limit,

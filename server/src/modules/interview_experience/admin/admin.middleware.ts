@@ -18,8 +18,7 @@ export const adminMiddleware = (
       message: "Unauthorized: No user found",
     });
   }
-  console.log(user);
-  console.log(ROLE_IDS);
+  
   if (user.role_id === ROLE_IDS.STUDENT) {
     return res.status(403).json({
       success: false,
