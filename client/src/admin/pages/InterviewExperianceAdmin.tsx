@@ -16,7 +16,6 @@ export default function InterviewExperianceAdmin() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [searchEmail, setSearchEmail] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortBy, setSortBy] = useState<"latest" | "oldest">("latest");
@@ -44,7 +43,6 @@ export default function InterviewExperianceAdmin() {
 
       setBlogs(res.data.data.data || []);
       setTotalPages(res.data.pagination?.totalPages || 1);
-      setTotal(res.data.pagination?.total || 0);
     } catch (error) {
       toast.error("Failed to load blogs");
       console.error(error);
@@ -133,7 +131,7 @@ export default function InterviewExperianceAdmin() {
           </p>
         </div>
         <div className="text-sm text-gray-500">
-          Total: <span className="font-semibold text-gray-700">{total}</span>{" "}
+          Total: <span className="font-semibold text-gray-700">{blogs.length}</span>{" "}
           blogs
         </div>
       </div>

@@ -26,13 +26,14 @@ const CommentItem: React.FC<CommentItemProps> = ({
     const [deleting, setDeleting] = useState(false);
 
     const [showReplies, setShowReplies] = useState(false);
-    const [replies, setReplies] = useState<CommentType[]>([]);
+    const [replies, setReplies] = useState<CommentType[]>(comment.replies || []);
     const [replyPage, setReplyPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [loadingReplies, setLoadingReplies] = useState(false);
     const [replyText, setReplyText] = useState("");
     const [submittingReply, setSubmittingReply] = useState(false);
     const [isReplying, setIsReplying] = useState(false);
+
 
     const [localReaction, setLocalReaction] = useState({
         user_reaction: comment.user_reaction,
@@ -317,7 +318,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                             {showReplies && replies.length > 0 ? (
                                 (replyPage < totalPages) ? `Load more replies` : (loadingReplies ? "Loading..." : "Hide replies")
                             ) : (
-                                `${comment.reply_count || 0} replies`
+                                `${comment.reply_count || ""} replies`
                             )}
                         </button>
                     )}
