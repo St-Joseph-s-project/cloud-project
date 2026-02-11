@@ -3,7 +3,7 @@ import type {
   Test,
   TestCreateInput,
   TestUpdateInput,
-  TestProblemMapping
+  TestProblemMapping,
 } from "./test.model.ts";
 
 export class TestService {
@@ -11,7 +11,8 @@ export class TestService {
    * Create a new test
    */
   async createTest(input: TestCreateInput): Promise<Test> {
-    const { name, batch_id, college_id, start_time, end_time, created_by } = input;
+    const { name, batch_id, college_id, start_time, end_time, created_by } =
+      input;
 
     const test = await prisma.test.create({
       data: {
@@ -20,8 +21,8 @@ export class TestService {
         college_id: college_id!,
         start_time,
         end_time,
-        created_by
-      }
+        created_by,
+      },
     });
 
     return test as Test;
@@ -40,7 +41,7 @@ export class TestService {
    */
   async getTestById(id: number): Promise<Test | null> {
     const test = await prisma.test.findUnique({
-      where: { id }
+      where: { id },
     });
     return test as Test | null;
   }
@@ -49,7 +50,15 @@ export class TestService {
    * Update a test
    */
   async updateTest(id: number, input: TestUpdateInput): Promise<Test> {
-    const { name, batch_id, college_id, start_time, end_time, status, created_by } = input;
+    const {
+      name,
+      batch_id,
+      college_id,
+      start_time,
+      end_time,
+      status,
+      created_by,
+    } = input;
 
     const test = await prisma.test.update({
       where: { id },
@@ -60,8 +69,8 @@ export class TestService {
         start_time,
         end_time,
         status: status as any,
-        created_by
-      }
+        created_by,
+      },
     });
 
     return test as Test;
@@ -74,8 +83,8 @@ export class TestService {
     const test = await prisma.test.update({
       where: { id },
       data: {
-        status: status as any
-      }
+        status: status as any,
+      },
     });
 
     return test as Test;
@@ -86,7 +95,7 @@ export class TestService {
    */
   async deleteTest(id: number): Promise<void> {
     await prisma.test.delete({
-      where: { id }
+      where: { id },
     });
   }
 
@@ -99,8 +108,8 @@ export class TestService {
     await prisma.testProblem.create({
       data: {
         test_id,
-        problem_id
-      }
+        problem_id,
+      },
     });
   }
 }

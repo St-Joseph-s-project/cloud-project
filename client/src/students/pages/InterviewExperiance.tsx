@@ -1,8 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import AddBlogModel from "../components/interviewExperiance/AddBlogModel";
 import BlogModel from "../components/interviewExperiance/BlogModel";
-import type { BlogType, Tag } from "../../types/pages/interviewExperiance/apiTypes";
-import { blogsAPI, tagsAPI } from "../../utils/axios";
+import type {
+  BlogType,
+  Tag,
+} from "../../types/pages/interviewExperiance/apiTypes";
+import { blogsAPI, tagsAPI, reactionsAPI } from "../../utils/axios";
+import { AiOutlineEdit } from "react-icons/ai";
+import ReactionSelector from "../components/interviewExperiance/ReactionSelector"; // Import ReactionSelector
+import { useAppSelector } from "../../hooks/store";
 
 const BLOGS_PER_PAGE = 6;
 
@@ -16,8 +22,12 @@ export default function InterviewExperiance() {
   // Filters
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedTagId, setSelectedTagId] = useState<number | undefined>(undefined);
-  const [sortBy, setSortBy] = useState<"latest" | "oldest" | "most_upvoted">("latest");
+  const [selectedTagId, setSelectedTagId] = useState<number | undefined>(
+    undefined,
+  );
+  const [sortBy, setSortBy] = useState<"latest" | "oldest" | "most_upvoted">(
+    "latest",
+  );
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -27,6 +37,9 @@ export default function InterviewExperiance() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [viewBlog, setViewBlog] = useState<BlogType | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editingBlog, setEditingBlog] = useState<BlogType | null>(null);
+
+  const { user } = useAppSelector((state) => state.auth);
 
   // Debounce search input
   useEffect(() => {
@@ -39,7 +52,10 @@ export default function InterviewExperiance() {
 
   // Fetch tags once
   useEffect(() => {
-    tagsAPI.getAll().then((res) => setAllTags(res.data || [])).catch(() => { });
+    tagsAPI
+      .getAll()
+      .then((res) => setAllTags(res.data || []))
+      .catch(() => { });
   }, []);
 
   // Fetch blogs
@@ -53,7 +69,17 @@ export default function InterviewExperiance() {
         tag_id: selectedTagId,
         sort_by: sortBy,
       });
-      setBlogs(res.data.data);
+      const fetched = res.data.data as BlogType[];
+      setBlogs(fetched);
+      const processed = fetched.map((b) => ({
+        ...b,
+        reactionCount: (b.reactions || []).reduce(
+          (acc, r) => acc + r.count,
+          0,
+        ),
+        isUserReacted: !!b.user_reaction,
+      }));
+      setBlogs(processed);
       setTotalPages(res.pagination?.totalPages || 1);
     } catch {
       console.error("Failed to fetch blogs");
@@ -72,20 +98,92 @@ export default function InterviewExperiance() {
   }, [selectedTagId, sortBy]);
 
   // Handle vote update from BlogModel
-  const handleVoteUpdate = (blogId: number, upVote: number, downVote: number, userVote: "up" | "down" | null) => {
+  const handleVoteUpdate = (
+    blogId: number,
+    upVote: number,
+    downVote: number,
+    userVote: "up" | "down" | null,
+  ) => {
     setBlogs((prev) =>
       prev.map((b) =>
-        b.id === blogId ? { ...b, up_vote: upVote, down_vote: downVote, user_vote: userVote } : b
-      )
+        b.id === blogId
+          ? { ...b, up_vote: upVote, down_vote: downVote, user_vote: userVote }
+          : b,
+      ),
     );
     if (viewBlog && viewBlog.id === blogId) {
-      setViewBlog({ ...viewBlog, up_vote: upVote, down_vote: downVote, user_vote: userVote });
+      setViewBlog({
+        ...viewBlog,
+        up_vote: upVote,
+        down_vote: downVote,
+        user_vote: userVote,
+      });
     }
   };
 
   const openBlog = (blog: BlogType) => {
     setViewBlog(blog);
     setViewModalOpen(true);
+  };
+
+  const handleEditBlog = (blog: BlogType) => {
+    setEditingBlog(blog);
+    setAddModalOpen(true);
+  };
+
+  // Reaction handler
+  const handleReaction = async (blogId: number, reactionId: number) => {
+    const blog = blogs.find((b) => b.id === blogId);
+    if (!blog) return;
+
+    const isSameReaction = (blog as any).user_reaction === reactionId;
+
+    // Optimistic update
+    setBlogs((prev) =>
+      prev.map((b) => {
+        if (b.id !== blogId) return b;
+
+        // Calculate new counts
+        // If removing (same reaction clicked): decrement count
+        // If switching: count usually stays same if we track total reactions, 
+        // OR we might need to decrement old reaction count and increment new one if we tracked individual counts.
+        // For simplicity with total count:
+        // - If was reacted and now switching: count same (1 user = 1 reaction)
+        // - If was reacted and removing: count - 1
+        // - If was not reacted and adding: count + 1
+
+        let newCount = (b as any).reactionCount || 0;
+        if (isSameReaction) {
+          newCount = Math.max(0, newCount - 1);
+        } else if (!(b as any).user_reaction) { // If no previous reaction, and not same reaction (meaning adding a new one)
+          newCount = newCount + 1;
+        }
+
+        return {
+          ...b,
+          isUserReacted: !isSameReaction, // If same, we are removing
+          user_reaction: isSameReaction ? null : reactionId,
+          reactionCount: newCount,
+        };
+      })
+    );
+
+    try {
+      if (isSameReaction) {
+        await reactionsAPI.removeBlogReaction({
+          blog_id: blogId,
+          reaction_id: reactionId,
+        });
+      } else {
+        await reactionsAPI.addBlogReaction({
+          blog_id: blogId,
+          reaction_id: reactionId,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to reaction", error);
+      fetchBlogs(); // Rollback / Sync
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -103,7 +201,11 @@ export default function InterviewExperiance() {
     } else {
       pages.push(1);
       if (page > 3) pages.push("...");
-      for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) {
+      for (
+        let i = Math.max(2, page - 1);
+        i <= Math.min(totalPages - 1, page + 1);
+        i++
+      ) {
         pages.push(i);
       }
       if (page < totalPages - 2) pages.push("...");
@@ -112,10 +214,56 @@ export default function InterviewExperiance() {
     return pages;
   };
 
+  const handleVote = async (id: number, isUp: boolean) => {
+    try {
+      const res = await blogsAPI.vote({ blog_id: id, is_up_vote: isUp });
+      const updated = res.data;
+      setBlogs((prev) =>
+        prev.map((b) =>
+          b.id === id
+            ? {
+              ...b,
+              up_vote: updated.up_vote,
+              down_vote: updated.down_vote,
+              user_vote: updated.user_vote,
+            }
+            : b,
+        ),
+      );
+      if (viewBlog && viewBlog.id === id) {
+        setViewBlog({
+          ...viewBlog,
+          up_vote: updated.up_vote,
+          down_vote: updated.down_vote,
+          user_vote: updated.user_vote,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to vote", err);
+    }
+  };
+
+  const isAdmin =
+    user?.role === "ADMIN" ||
+    user?.role === "FACULTY" ||
+    user?.role === "SUPER_ADMIN";
+
+  const handleDeleteBlog = async (blogId: number) => {
+    try {
+      if (!window.confirm("Are you sure you want to delete this blog?")) return;
+      await blogsAPI.delete(blogId);
+      setBlogs((prev) => prev.filter((b) => b.id !== blogId));
+      if (viewBlog && viewBlog.id === blogId) {
+        setViewModalOpen(false);
+      }
+    } catch (err) {
+      console.error("Failed to delete blog", err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-0 py-0">
-
         {/* Toolbar */}
         <div className="mb-6 space-y-4">
           <div className="flex flex-col md:flex-row md:items-center gap-3">
@@ -162,7 +310,12 @@ export default function InterviewExperiance() {
                 : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                 }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -181,8 +334,18 @@ export default function InterviewExperiance() {
               onClick={() => setAddModalOpen(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
               Write Blog
             </button>
@@ -192,7 +355,9 @@ export default function InterviewExperiance() {
           {showFilters && (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-gray-700">Filter by Tag</span>
+                <span className="text-sm font-medium text-gray-700">
+                  Filter by Tag
+                </span>
                 {selectedTagId && (
                   <button
                     onClick={() => setSelectedTagId(undefined)}
@@ -211,11 +376,17 @@ export default function InterviewExperiance() {
               />
               <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-1">
                 {allTags
-                  .filter((tag) => tag.name.toLowerCase().includes(tagSearch.toLowerCase()))
+                  .filter((tag) =>
+                    tag.name.toLowerCase().includes(tagSearch.toLowerCase()),
+                  )
                   .map((tag) => (
                     <button
                       key={tag.id}
-                      onClick={() => setSelectedTagId(selectedTagId === tag.id ? undefined : tag.id)}
+                      onClick={() =>
+                        setSelectedTagId(
+                          selectedTagId === tag.id ? undefined : tag.id,
+                        )
+                      }
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selectedTagId === tag.id
                         ? "bg-blue-600 text-white border-blue-600"
                         : "bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600"
@@ -224,9 +395,15 @@ export default function InterviewExperiance() {
                       {tag.name}
                     </button>
                   ))}
-                {allTags.filter((tag) => tag.name.toLowerCase().includes(tagSearch.toLowerCase())).length === 0 && (
-                  <span className="text-sm text-gray-400">{allTags.length === 0 ? "No tags available" : "No matching tags"}</span>
-                )}
+                {allTags.filter((tag) =>
+                  tag.name.toLowerCase().includes(tagSearch.toLowerCase()),
+                ).length === 0 && (
+                    <span className="text-sm text-gray-400">
+                      {allTags.length === 0
+                        ? "No tags available"
+                        : "No matching tags"}
+                    </span>
+                  )}
               </div>
             </div>
           )}
@@ -239,7 +416,12 @@ export default function InterviewExperiance() {
           </div>
         ) : blogs.length === 0 ? (
           <div className="text-center py-20">
-            <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-16 h-16 mx-auto text-gray-300 mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -247,16 +429,19 @@ export default function InterviewExperiance() {
                 d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
               />
             </svg>
-            <h3 className="text-lg font-medium text-gray-600 mb-1">No blogs found</h3>
-            <p className="text-sm text-gray-400">Try adjusting your filters or be the first to share!</p>
+            <h3 className="text-lg font-medium text-gray-600 mb-1">
+              No blogs found
+            </h3>
+            <p className="text-sm text-gray-400">
+              Try adjusting your filters or be the first to share!
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {blogs?.map((blog) => (
               <div
                 key={blog.id}
-                onClick={() => openBlog(blog)}
-                className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer group"
+                className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-gray-300 transition-all group"
               >
                 {/* Card header */}
                 <div className="flex items-center gap-2 mb-3">
@@ -264,13 +449,61 @@ export default function InterviewExperiance() {
                     {blog.user_name?.charAt(0)?.toUpperCase() || "U"}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-700 truncate">{blog.user_name}</p>
-                    <p className="text-xs text-gray-400">{formatDate(blog.created_at)}</p>
+                    <p className="text-sm font-medium text-gray-700 truncate">
+                      {blog.user_name}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {formatDate(blog.created_at)}
+                    </p>
                   </div>
+                  {/* Edit Blog Button */}
+                  {user && user.id === blog.user_id && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditBlog(blog);
+                      }}
+                      className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-blue-600 transition-colors"
+                      title="Edit blog"
+                    >
+                      <AiOutlineEdit className="w-5 h-5" />
+                    </button>
+                  )}
+                  {/* Delete Blog Button */}
+                  {((user && user.id === blog.user_id) || isAdmin) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteBlog(blog.id);
+                      }}
+                      className="p-1.5 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                      title="Delete blog"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                  )}
                 </div>
 
                 {/* Title */}
-                <h3 className="text-base font-semibold text-gray-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                <h3
+                  className="text-base font-semibold text-gray-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openBlog(blog);
+                  }}
+                >
                   {blog.title}
                 </h3>
 
@@ -298,20 +531,95 @@ export default function InterviewExperiance() {
                   </div>
                 )}
 
-                {/* Footer: votes */}
-                <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                {/* Footer: reactions & votes */}
+                <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                  {/* Like / Reaction button */}
+                  {/* Like / Reaction button */}
+                  <ReactionSelector
+                    currentReaction={(blog as any).user_reaction} // Need to ensure user_reaction is mapped
+                    reactionCount={(blog as any).reactionCount || 0}
+                    onSelect={(reactionId) => handleReaction(blog.id, reactionId)}
+                  />
+
+                  {/* Upvote Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleVote(blog.id, true);
+                    }}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${blog.user_vote === "up"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-gray-50 text-gray-600 hover:bg-green-50"
+                      }`}
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 15l7-7 7 7"
+                      />
                     </svg>
                     <span>{blog.up_vote}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </button>
+
+                  {/* Downvote Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleVote(blog.id, false);
+                    }}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${blog.user_vote === "down"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-gray-50 text-gray-600 hover:bg-red-50"
+                      }`}
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                     <span>{blog.down_vote}</span>
-                  </div>
+                  </button>
+                </div>
+
+                {/* Comments button - opens popup for comments only */}
+                <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openBlog(blog);
+                    }}
+                    className="flex items-center gap-2 text-sm text-gray-600 px-3 py-1 rounded hover:bg-gray-50"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2H7l-4 4V6a2 2 0 012-2h2"
+                      />
+                    </svg>
+                    <span>{(blog.comment_count || 0)} Comments</span>
+                  </button>
                 </div>
               </div>
             ))}
@@ -330,7 +638,10 @@ export default function InterviewExperiance() {
             </button>
             {pageNumbers().map((p, i) =>
               p === "..." ? (
-                <span key={`dots-${i}`} className="px-2 py-2 text-sm text-gray-400">
+                <span
+                  key={`dots-${i}`}
+                  className="px-2 py-2 text-sm text-gray-400"
+                >
                   ...
                 </span>
               ) : (
@@ -344,7 +655,7 @@ export default function InterviewExperiance() {
                 >
                   {p}
                 </button>
-              )
+              ),
             )}
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -360,8 +671,12 @@ export default function InterviewExperiance() {
       {/* Modals */}
       <AddBlogModel
         isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
+        onClose={() => {
+          setAddModalOpen(false);
+          setEditingBlog(null);
+        }}
         onBlogAdded={fetchBlogs}
+        initialData={editingBlog || undefined}
       />
 
       <BlogModel
@@ -369,6 +684,8 @@ export default function InterviewExperiance() {
         isOpen={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
         onVoteUpdate={handleVoteUpdate}
+        onDelete={handleDeleteBlog}
+        isAdmin={isAdmin}
       />
     </div>
   );

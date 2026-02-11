@@ -1,6 +1,6 @@
-import React from 'react';
-import StudentProfile from '../components/StudentProfile';
-import PageHeader from '../components/PageHeader';
+import React from "react";
+import StudentProfile from "../components/StudentProfile";
+import PageHeader from "../components/PageHeader";
 
 const Dashboard: React.FC = () => {
   return (

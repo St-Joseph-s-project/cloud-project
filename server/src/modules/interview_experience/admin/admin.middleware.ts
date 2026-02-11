@@ -8,7 +8,7 @@ import { ROLE_IDS } from "../../../constants/roles.ts";
 export const adminMiddleware = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const user = (req as any).user;
 
@@ -18,8 +18,9 @@ export const adminMiddleware = (
       message: "Unauthorized: No user found",
     });
   }
-
-  if (user.role_id !== ROLE_IDS.ADMIN) {
+  console.log(user);
+  console.log(ROLE_IDS);
+  if (user.role_id === ROLE_IDS.STUDENT) {
     return res.status(403).json({
       success: false,
       message: "Forbidden: Admin access required",

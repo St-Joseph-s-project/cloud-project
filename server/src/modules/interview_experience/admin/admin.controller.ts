@@ -9,7 +9,7 @@ import { commentService } from "../comments/comments.service.ts";
  */
 export const getAdminBlogs: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const page = Number(req.query.page) || 1;
@@ -21,7 +21,7 @@ export const getAdminBlogs: RequestHandler = async (
       page,
       limit,
       search_email,
-      sort_by
+      sort_by,
     );
     return sendSuccess(res, 200, result);
   } catch (error: any) {
@@ -36,7 +36,7 @@ export const getAdminBlogs: RequestHandler = async (
  */
 export const adminDeleteBlog: RequestHandler = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const blogId = Number(req.params.id);

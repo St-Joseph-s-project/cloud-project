@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import Sidebar from './Sidebar';
-import { Bars3Icon } from '@heroicons/react/24/outline';
+import React, { useState } from "react";
+import { Outlet } from "react-router-dom";
+import Sidebar from "./Sidebar";
+import { Bars3Icon } from "@heroicons/react/24/outline";
 
 const Layout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -16,15 +16,21 @@ const Layout: React.FC = () => {
 
       {/* Mobile Sidebar Overlay */}
       <div
-        className={`md:hidden fixed inset-0 z-40 transition-opacity duration-300 ${isMobileSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
+        className={`md:hidden fixed inset-0 z-40 transition-opacity duration-300 ${
+          isMobileSidebarOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
       >
         <div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300"
           onClick={() => setIsMobileSidebarOpen(false)}
         />
         <div className="relative w-80 h-full transform transition-transform duration-300">
-          <Sidebar isOpen={true} onToggle={() => setIsMobileSidebarOpen(false)} />
+          <Sidebar
+            isOpen={true}
+            onToggle={() => setIsMobileSidebarOpen(false)}
+          />
         </div>
       </div>
 
@@ -53,9 +59,7 @@ const Layout: React.FC = () => {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100">
               <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-xs font-medium text-blue-700">
-                Active
-              </span>
+              <span className="text-xs font-medium text-blue-700">Active</span>
             </div>
             <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-blue-600 text-white font-bold">
               S
@@ -73,12 +77,32 @@ const Layout: React.FC = () => {
                 aria-label="Toggle sidebar"
               >
                 {isSidebarOpen ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                    />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                    />
                   </svg>
                 )}
               </button>
@@ -107,7 +131,9 @@ const Layout: React.FC = () => {
         </header>
 
         {/* Content Area */}
-        <main className={`flex-1 overflow-auto py-6 md:py-8 transition-all duration-300`}>
+        <main
+          className={`flex-1 overflow-auto py-6 md:py-8 transition-all duration-300`}
+        >
           <div className="max-w-7xl mx-auto">
             {/* Content Container */}
             <div className="">
@@ -117,8 +143,13 @@ const Layout: React.FC = () => {
             {/* Footer */}
             <footer className="mt-8 text-center">
               <div className="text-sm text-gray-500">
-                <p>CodePro Student Portal • © {new Date().getFullYear()} All rights reserved</p>
-                <p className="mt-1 text-xs">Secure Learning Environment • Progress tracked in real-time</p>
+                <p>
+                  CodePro Student Portal • © {new Date().getFullYear()} All
+                  rights reserved
+                </p>
+                <p className="mt-1 text-xs">
+                  Secure Learning Environment • Progress tracked in real-time
+                </p>
               </div>
             </footer>
           </div>

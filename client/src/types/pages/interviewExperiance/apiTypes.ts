@@ -3,6 +3,22 @@ export interface Tag {
   name: string;
 }
 
+export interface BlogFile {
+  id: number;
+  file_url: string;
+  file_name: string;
+  file_size?: number;
+  file_mime_type?: string;
+  created_at?: string;
+}
+
+export interface ReactionCount {
+  reaction_id: number;
+  reaction_name: string;
+  count: number;
+  user_reacted: boolean;
+}
+
 export interface BlogType {
   id: number;
   user_id: number;
@@ -14,10 +30,17 @@ export interface BlogType {
   is_deleted: boolean;
   user_name: string;
   tags: Tag[];
+  files?: BlogFile[];
   user_vote?: "up" | "down" | null;
+  comment_count?: number;
+  user_reaction?: number | null;
+  reactions?: { reaction_id: number; count: number }[];
 }
 
 export interface CommentType {
+  reactionCount: number;
+  isUserReacted: boolean;
+  user_reaction?: number | null;
   id: number;
   user_id: number;
   blog_id: number;
@@ -37,9 +60,9 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export interface GetAllBlogsResponse extends PaginatedResponse<BlogType> {}
+export interface GetAllBlogsResponse extends PaginatedResponse<BlogType> { }
 
-export interface GetCommentsResponse extends PaginatedResponse<CommentType> {}
+export interface GetCommentsResponse extends PaginatedResponse<CommentType> { }
 
 export interface AddBlogPayload {
   title: string;
@@ -52,9 +75,19 @@ export interface AddCommentPayload {
   comment: string;
 }
 
+export interface UpdateCommentPayload {
+  comment: string;
+}
+
 export interface VotePayload {
   blog_id: number;
   is_up_vote: boolean;
+}
+
+export interface ReactionPayload {
+  blog_id?: number;
+  comment_id?: number;
+  reaction_id: number;
 }
 
 // Admin types
@@ -62,4 +95,4 @@ export interface AdminBlogType extends BlogType {
   user_email: string;
 }
 
-export interface GetAdminBlogsResponse extends PaginatedResponse<AdminBlogType> {}
+export interface GetAdminBlogsResponse extends PaginatedResponse<AdminBlogType> { }

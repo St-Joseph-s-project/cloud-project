@@ -5,25 +5,25 @@ import { ROLES } from "../../constants/roles.ts";
  * Middleware to check if user has required role
  */
 export const requireRole = (...allowedRoles: string[]) => {
-    return (req: Request, res: Response, next: NextFunction) => {
-        const user = (req as any).user;
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = (req as any).user;
 
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication required"
-            });
-        }
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
 
-        if (!allowedRoles.includes(user.role)) {
-            return res.status(403).json({
-                success: false,
-                message: "Insufficient permissions"
-            });
-        }
+    if (!allowedRoles.includes(user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Insufficient permissions",
+      });
+    }
 
-        next();
-    };
+    next();
+  };
 };
 
 /**

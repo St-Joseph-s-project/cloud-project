@@ -1,12 +1,12 @@
 import { Router } from "express";
 import {
-    createTest,
-    getAllTests,
-    getTestById,
-    updateTest,
-    deleteTest,
-    updateTestStatus,
-    mapProblemsToTest
+  createTest,
+  getAllTests,
+  getTestById,
+  updateTest,
+  deleteTest,
+  updateTestStatus,
+  mapProblemsToTest,
 } from "./test.controller.ts";
 
 const router = Router();

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAllTags, createTags } from "./tag.controller.ts";
+import { getAllTags, createTags, createTag } from "./tag.controller.ts";
 
 const router = Router();
 
@@ -7,6 +7,9 @@ const router = Router();
 router.get("/", getAllTags);
 
 // Create tags from constants
-router.post("/create-tag", createTags);
+router.post("/create-tags", createTags);
+
+// Create a single tag
+router.post("/create", createTag);
 
 export default router;

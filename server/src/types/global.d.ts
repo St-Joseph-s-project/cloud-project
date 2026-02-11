@@ -1,2 +1,2 @@
 // Global type definitions
-export { };
+export {};

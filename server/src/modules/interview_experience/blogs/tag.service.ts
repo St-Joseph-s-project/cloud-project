@@ -41,6 +41,28 @@ export class TagService {
 
     return { created, existing };
   }
+
+  /**
+   * Create a single tag
+   */
+  async createTag(name: string): Promise<Tag> {
+    const existingTag = await prisma.tags.findUnique({
+      where: { name },
+    });
+
+    if (existingTag) {
+      throw new Error("Tag already exists");
+    }
+
+    const tag = await prisma.tags.create({
+      data: { name },
+    });
+
+    return {
+      id: tag.id,
+      name: tag.name,
+    };
+  }
 }
 
 export const tagService = new TagService();

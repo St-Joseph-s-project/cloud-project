@@ -1,9 +1,11 @@
 # Copilot Instructions — Interview Experience Page
 
 ## Current Focus
+
 Working on the **Interview Experience** blog feature under `src/students/pages/InterviewExperiance.tsx` and its components in `src/students/components/interviewExperiance/`.
 
 ## Tech Stack
+
 - **React 18** with TypeScript
 - **Tailwind CSS v4** (utility-first, no component library)
 - **Redux Toolkit** for global state (`src/redux/`)
@@ -13,6 +15,7 @@ Working on the **Interview Experience** blog feature under `src/students/pages/I
 - **Vite** as build tool
 
 ## Project Structure (relevant)
+
 ```
 src/
   students/
@@ -34,6 +37,7 @@ src/
 ```
 
 ## Database Schema (backend reference)
+
 ```sql
 blogs        → id, user_id, title, description, up_vote, down_vote, created_at, is_deleted
 vote_user_mapping → id, user_id, blog_id, is_up_vote, is_down_vote
@@ -43,6 +47,7 @@ comments     → id, user_id, blog_id, comment, created_at
 ```
 
 ## Key Types (from apiTypes.ts)
+
 - `BlogType` — id, user_id, title, description, up_vote, down_vote, created_at, is_deleted, user_name, tags: Tag[], user_vote?: "up" | "down" | null
 - `CommentType` — id, user_id, blog_id, comment, created_at, user_name
 - `Tag` — id, name
@@ -52,10 +57,16 @@ comments     → id, user_id, blog_id, comment, created_at
 - `VotePayload` — blog_id, is_up_vote
 
 ## Mock Data (backend not ready)
+
 Currently using mock APIs from `src/data/mockBlogData.ts`. Imports are aliased:
+
 ```ts
-import { mockBlogsAPI as blogsAPI, mockTagsAPI as tagsAPI } from "../../data/mockBlogData";
+import {
+  mockBlogsAPI as blogsAPI,
+  mockTagsAPI as tagsAPI,
+} from "../../data/mockBlogData";
 ```
+
 When the backend is ready, switch imports back to `../../utils/axios`.
 
 Real API endpoints (for reference):
@@ -69,6 +80,7 @@ Real API endpoints (for reference):
 | GET | `/api/tags` | Get all tags |
 
 ## Coding Conventions
+
 - Use **functional components** with hooks (no class components)
 - Use `React.FC<Props>` for typed components
 - Tailwind classes only — no inline styles, no CSS modules

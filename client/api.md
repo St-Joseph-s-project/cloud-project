@@ -1,6 +1,7 @@
 # Interview Experience API Documentation
 
 ## Base URL
+
 ```
 /api
 ```
@@ -8,7 +9,9 @@
 ---
 
 ## Authentication
+
 All endpoints require JWT token in Authorization header:
+
 ```
 Authorization: Bearer <JWT_TOKEN>
 ```
@@ -18,6 +21,7 @@ Authorization: Bearer <JWT_TOKEN>
 ## User Endpoints
 
 ### 1. Get All Blogs (Paginated)
+
 **Endpoint:** `GET /blogs`
 
 **Query Parameters:**
@@ -30,6 +34,7 @@ Authorization: Bearer <JWT_TOKEN>
 | sort_by | string | No | `latest` \| `oldest` \| `most_upvoted` (default: `latest`) |
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -63,6 +68,7 @@ Authorization: Bearer <JWT_TOKEN>
 ---
 
 ### 2. Get Blog by ID
+
 **Endpoint:** `GET /blogs/:id`
 
 **Path Parameters:**
@@ -71,6 +77,7 @@ Authorization: Bearer <JWT_TOKEN>
 | id | number | Yes | Blog ID |
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -96,18 +103,21 @@ Authorization: Bearer <JWT_TOKEN>
 ---
 
 ### 3. Create Blog
+
 **Endpoint:** `POST /blogs`
 
 **Request Body:**
+
 ```json
 {
   "title": "My Google Interview Experience",
   "description": "Detailed description of the interview...",
-  "tags": [1, 3, 5]  // Array of tag IDs
+  "tags": [1, 3, 5] // Array of tag IDs
 }
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -127,6 +137,7 @@ Authorization: Bearer <JWT_TOKEN>
 ---
 
 ### 4. Delete Blog (User's Own)
+
 **Endpoint:** `DELETE /blogs/:id`
 
 **Path Parameters:**
@@ -137,6 +148,7 @@ Authorization: Bearer <JWT_TOKEN>
 **Note:** User can only delete their own blogs.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -147,22 +159,26 @@ Authorization: Bearer <JWT_TOKEN>
 ---
 
 ### 5. Vote on Blog
+
 **Endpoint:** `POST /blogs/vote`
 
 **Request Body:**
+
 ```json
 {
   "blog_id": 1,
-  "is_up_vote": true  // true for upvote, false for downvote
+  "is_up_vote": true // true for upvote, false for downvote
 }
 ```
 
 **Behavior:**
+
 - If user hasn't voted: adds the vote
 - If user clicks same vote type again: removes the vote (toggle off)
 - If user clicks opposite vote type: switches the vote
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -177,6 +193,7 @@ Authorization: Bearer <JWT_TOKEN>
 ---
 
 ### 6. Get Comments for a Blog (Paginated)
+
 **Endpoint:** `GET /blogs/:id/comments`
 
 **Path Parameters:**
@@ -191,6 +208,7 @@ Authorization: Bearer <JWT_TOKEN>
 | limit | number | No | Items per page (default: 5) |
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -216,9 +234,11 @@ Authorization: Bearer <JWT_TOKEN>
 ---
 
 ### 7. Add Comment
+
 **Endpoint:** `POST /blogs/comments`
 
 **Request Body:**
+
 ```json
 {
   "blog_id": 1,
@@ -227,6 +247,7 @@ Authorization: Bearer <JWT_TOKEN>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -244,6 +265,7 @@ Authorization: Bearer <JWT_TOKEN>
 ---
 
 ### 8. Delete Comment
+
 **Endpoint:** `DELETE /blogs/comments/:id`
 
 **Path Parameters:**
@@ -254,6 +276,7 @@ Authorization: Bearer <JWT_TOKEN>
 **Note:** User can only delete their own comments.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -264,9 +287,11 @@ Authorization: Bearer <JWT_TOKEN>
 ---
 
 ### 9. Get All Tags
+
 **Endpoint:** `GET /tags`
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -286,6 +311,7 @@ Authorization: Bearer <JWT_TOKEN>
 ## Admin Endpoints
 
 ### 10. Get All Blogs (Admin)
+
 **Endpoint:** `GET /admin/blogs`
 
 **Query Parameters:**
@@ -297,6 +323,7 @@ Authorization: Bearer <JWT_TOKEN>
 | sort_by | string | No | `latest` \| `oldest` (default: `latest`) |
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -333,6 +360,7 @@ Authorization: Bearer <JWT_TOKEN>
 ---
 
 ### 11. Delete Blog (Admin)
+
 **Endpoint:** `DELETE /admin/blogs/:id`
 
 **Path Parameters:**
@@ -343,6 +371,7 @@ Authorization: Bearer <JWT_TOKEN>
 **Note:** Admin can delete any blog regardless of ownership.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -353,6 +382,7 @@ Authorization: Bearer <JWT_TOKEN>
 ---
 
 ### 12. Delete Comment (Admin)
+
 **Endpoint:** `DELETE /admin/comments/:id`
 
 **Path Parameters:**
@@ -363,6 +393,7 @@ Authorization: Bearer <JWT_TOKEN>
 **Note:** Admin can delete any comment regardless of ownership.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -433,6 +464,7 @@ comments (
 ## Error Responses
 
 All endpoints return errors in this format:
+
 ```json
 {
   "success": false,
@@ -441,6 +473,7 @@ All endpoints return errors in this format:
 ```
 
 Common HTTP status codes:
+
 - `400` - Bad Request (validation error)
 - `401` - Unauthorized (missing/invalid token)
 - `403` - Forbidden (no permission)

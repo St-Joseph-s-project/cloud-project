@@ -1,7 +1,7 @@
-import React from 'react';
-import { NavLink, useParams, useNavigate } from 'react-router-dom';
-import { useAppDispatch } from '../../hooks/store';
-import { logout } from '../../redux/slices/authSlice';
+import React from "react";
+import { NavLink, useParams, useNavigate } from "react-router-dom";
+import { useAppDispatch } from "../../hooks/store";
+import { logout } from "../../redux/slices/authSlice";
 import {
   TrophyIcon,
   UserIcon,
@@ -9,8 +9,8 @@ import {
   ArrowRightOnRectangleIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  BuildingOfficeIcon
-} from '@heroicons/react/24/outline';
+  BuildingOfficeIcon,
+} from "@heroicons/react/24/outline";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -23,22 +23,38 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   const navigate = useNavigate();
 
   const navItems = [
-    { path: `/student/dashboard/${studentId}/problems`, label: 'Problems', icon: CodeBracketIcon },
-    { path: `/student/dashboard/${studentId}/leaderboard`, label: 'Leaderboard', icon: TrophyIcon },
-    { path: `/student/dashboard/${studentId}/profile`, label: 'Profile', icon: UserIcon },
-    { path: `/student/dashboard/${studentId}/interview-experiance`, label: "Interview Experiance", icon: BuildingOfficeIcon }
+    {
+      path: `/student/dashboard/${studentId}/problems`,
+      label: "Problems",
+      icon: CodeBracketIcon,
+    },
+    {
+      path: `/student/dashboard/${studentId}/leaderboard`,
+      label: "Leaderboard",
+      icon: TrophyIcon,
+    },
+    {
+      path: `/student/dashboard/${studentId}/profile`,
+      label: "Profile",
+      icon: UserIcon,
+    },
+    {
+      path: `/student/dashboard/${studentId}/interview-experiance`,
+      label: "Interview Experiance",
+      icon: BuildingOfficeIcon,
+    },
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
+    localStorage.removeItem("user");
     dispatch(logout());
-    navigate('/login');
+    navigate("/login");
   };
 
   return (
     <aside
       className={`bg-white border-r border-blue-100 shadow-lg flex flex-col h-screen sticky top-0 transition-all duration-300 ease-in-out z-30
-                ${isOpen ? 'w-64' : 'w-20'}
+                ${isOpen ? "w-64" : "w-20"}
             `}
     >
       {/* Logo / Header */}
@@ -75,20 +91,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
-            <div key={item.path} className={`${isOpen ? 'px-3 mb-2' : 'px-1 mb-1'}`}>
+            <div
+              key={item.path}
+              className={`${isOpen ? "px-3 mb-2" : "px-1 mb-1"}`}
+            >
               <NavLink
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center ${isOpen ? 'px-3 py-3' : 'px-2 py-3 justify-center'} text-sm font-medium rounded-xl transition-all duration-200 relative ${isActive
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                    : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                  `flex items-center ${isOpen ? "px-3 py-3" : "px-2 py-3 justify-center"} text-sm font-medium rounded-xl transition-all duration-200 relative ${
+                    isActive
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                      : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <div className={`${isOpen ? 'mr-3' : ''}`}>
-                      <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-blue-600'}`} />
+                    <div className={`${isOpen ? "mr-3" : ""}`}>
+                      <Icon
+                        className={`w-5 h-5 ${isActive ? "text-white" : "text-blue-600"}`}
+                      />
                     </div>
                     {isOpen && <span>{item.label}</span>}
                     {isActive && isOpen && (
@@ -103,7 +125,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       </nav>
       {/* Footer / User Profile */}
       <div className="p-4 border-t border-blue-50 bg-gradient-to-t from-blue-50/50 to-transparent space-y-3">
-        <div className={`flex items-center ${isOpen ? 'px-2 py-3' : 'justify-center py-3'} rounded-xl bg-blue-50 border border-blue-100`}>
+        <div
+          className={`flex items-center ${isOpen ? "px-2 py-3" : "justify-center py-3"} rounded-xl bg-blue-50 border border-blue-100`}
+        >
           <div className="flex-shrink-0">
             <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-md">
               S
@@ -121,12 +145,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
           )}
         </div>
 
-        <div className={`${isOpen ? 'px-2' : 'px-1'}`}>
+        <div className={`${isOpen ? "px-2" : "px-1"}`}>
           <button
             onClick={handleLogout}
-            className={`flex items-center ${isOpen ? 'px-3 py-2.5' : 'px-2 py-2.5 justify-center'} text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 border border-red-100 w-full`}
+            className={`flex items-center ${isOpen ? "px-3 py-2.5" : "px-2 py-2.5 justify-center"} text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 border border-red-100 w-full`}
           >
-            <ArrowRightOnRectangleIcon className={`${isOpen ? 'mr-2' : ''} w-5 h-5`} />
+            <ArrowRightOnRectangleIcon
+              className={`${isOpen ? "mr-2" : ""} w-5 h-5`}
+            />
             {isOpen && <span>Logout</span>}
           </button>
         </div>
@@ -144,7 +170,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
         )}
       </div>
     </aside>
-
   );
 };
 

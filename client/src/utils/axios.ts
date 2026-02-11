@@ -2,7 +2,9 @@ import axios from "axios";
 import type {
   AddBlogPayload,
   AddCommentPayload,
+  UpdateCommentPayload,
   VotePayload,
+  ReactionPayload,
 } from "../types/pages/interviewExperiance/apiTypes";
 
 export const BASE_URL = "http://localhost:3000/api";
@@ -20,7 +22,7 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 export const authAPI = {
@@ -55,7 +57,9 @@ export const problemsAPI = {
     return response.data;
   },
   getById: async (id: string) => {
-    const response = await axiosInstance.get(`/problem/get-problem-by-id/${id}`);
+    const response = await axiosInstance.get(
+      `/problem/get-problem-by-id/${id}`,
+    );
     return response.data;
   },
   create: async (data: any) => {
@@ -63,11 +67,16 @@ export const problemsAPI = {
     return response.data;
   },
   update: async (id: string, data: any) => {
-    const response = await axiosInstance.put(`/problem/update-problem/${id}`, data);
+    const response = await axiosInstance.put(
+      `/problem/update-problem/${id}`,
+      data,
+    );
     return response.data;
   },
   delete: async (id: string) => {
-    const response = await axiosInstance.delete(`/problem/delete-problem/${id}`);
+    const response = await axiosInstance.delete(
+      `/problem/delete-problem/${id}`,
+    );
     return response.data;
   },
 };
@@ -94,8 +103,22 @@ export const blogsAPI = {
     const response = await axiosInstance.get(`/blogs/${id}`);
     return response.data;
   },
-  create: async (data: AddBlogPayload) => {
-    const response = await axiosInstance.post("/blogs", data);
+  create: async (data: AddBlogPayload | FormData) => {
+    const response = await axiosInstance.post("/blogs", data, {
+      headers:
+        data instanceof FormData
+          ? { "Content-Type": "multipart/form-data" }
+          : {},
+    });
+    return response.data;
+  },
+  update: async (id: number, data: any | FormData) => {
+    const response = await axiosInstance.put(`/blogs/${id}`, data, {
+      headers:
+        data instanceof FormData
+          ? { "Content-Type": "multipart/form-data" }
+          : {},
+    });
     return response.data;
   },
   delete: async (id: number) => {
@@ -109,12 +132,21 @@ export const blogsAPI = {
 };
 
 export const commentsAPI = {
-  getByBlogId: async (blogId: number, params: { page?: number; limit?: number }) => {
-    const response = await axiosInstance.get(`/blogs/${blogId}/comments`, { params });
+  getByBlogId: async (
+    blogId: number,
+    params: { page?: number; limit?: number },
+  ) => {
+    const response = await axiosInstance.get(`/blogs/${blogId}/comments`, {
+      params,
+    });
     return response.data;
   },
   create: async (data: AddCommentPayload) => {
     const response = await axiosInstance.post("/blogs/comments", data);
+    return response.data;
+  },
+  update: async (id: number, data: UpdateCommentPayload) => {
+    const response = await axiosInstance.put(`/blogs/comments/${id}`, data);
     return response.data;
   },
   delete: async (id: number) => {
@@ -123,9 +155,43 @@ export const commentsAPI = {
   },
 };
 
+export const reactionsAPI = {
+  getBlogReactions: async (blogId: number) => {
+    const response = await axiosInstance.get(`/reactions/blog/${blogId}`);
+    return response.data;
+  },
+  addBlogReaction: async (data: ReactionPayload) => {
+    const response = await axiosInstance.post("/reactions/blog/add", data);
+    return response.data;
+  },
+  removeBlogReaction: async (data: ReactionPayload) => {
+    const response = await axiosInstance.post("/reactions/blog/remove", data);
+    return response.data;
+  },
+  getCommentReactions: async (commentId: number) => {
+    const response = await axiosInstance.get(`/reactions/comment/${commentId}`);
+    return response.data;
+  },
+  addCommentReaction: async (data: ReactionPayload) => {
+    const response = await axiosInstance.post("/reactions/comment/add", data);
+    return response.data;
+  },
+  removeCommentReaction: async (data: ReactionPayload) => {
+    const response = await axiosInstance.post(
+      "/reactions/comment/remove",
+      data,
+    );
+    return response.data;
+  },
+};
+
 export const tagsAPI = {
   getAll: async () => {
     const response = await axiosInstance.get("/tags");
+    return response.data;
+  },
+  create: async (name: string) => {
+    const response = await axiosInstance.post("/tags/create", { name });
     return response.data;
   },
 };
@@ -138,18 +204,25 @@ export const adminBlogsAPI = {
     search_email?: string;
     sort_by?: "latest" | "oldest";
   }) => {
-    const response = await axiosInstance.get("/interview-experience/admin/blogs", { params });
+    const response = await axiosInstance.get(
+      "/interview-experience/admin/blogs",
+      { params },
+    );
     return response;
   },
   delete: async (id: number) => {
-    const response = await axiosInstance.delete(`/interview-experience/admin/blogs/${id}`);
+    const response = await axiosInstance.delete(
+      `/interview-experience/admin/blogs/${id}`,
+    );
     return response.data;
   },
 };
 
 export const adminCommentsAPI = {
   delete: async (id: number) => {
-    const response = await axiosInstance.delete(`/interview-experience/admin/comments/${id}`);
+    const response = await axiosInstance.delete(
+      `/interview-experience/admin/comments/${id}`,
+    );
     return response.data;
   },
 };
